@@ -132,3 +132,34 @@ consume the shared per-IP 60-request admission budget for other lobby operations
 This accommodates ordinary waiting and multiple clients on one machine while
 retaining abuse limits. Final server responses now flush a bounded TLS close_notify
 so a deliberate rejection is not obscured by an unexpected-EOF error.
+
+## Game cleanup and local operator commands
+
+Waiting games disappear after 10 minutes with no connected players; running games
+after 15 minutes with everybody disconnected; finished games after 5 minutes.
+Returning players reset the empty-game timer. Lobby refreshes do not. Server
+restarts give retained games a fresh grace period. Deleted games stay deleted
+across restarts; safe hand history remains on disk. The service enables a private
+operator socket, so no new network port or player permissions are needed.
+
+Run on the dedicated host as the service account:
+
+```sh
+server="$HOME/.local/share/sneakyblinders/current/poker-server"
+socket="$HOME/.local/share/sneakyblinders/state/admin.sock"
+"$server" --admin-socket "$socket" --admin-action list
+"$server" --admin-socket "$socket" --admin-action clear-inactive
+"$server" --admin-socket "$socket" --admin-action remove --table-id 12
+```
+
+`clear-inactive` removes finished games and waiting games with no connected
+players, without restarting the service. A selected running game, or waiting game
+with connected players, is rejected unless `--force` is supplied with `remove`.
+Use that override only when intentionally abandoning that game. Removal persists
+before success is returned. The JSON response reports `removed` or `error`.
+
+The socket parent must be private (0700); the socket is 0600. If running manually,
+add `--admin-socket /private/directory/admin.sock` to the multi-table server command.
+`--table-idle-seconds` overrides the running-game abandonment period (default 900).
+`--reconnect-ttl-seconds` defaults to 900; shortening it also shortens credential
+grace after disconnect. These are operator flags, not player settings.

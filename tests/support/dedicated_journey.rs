@@ -263,7 +263,32 @@ pub fn run(binary: &Path, output: Option<&Path>) -> Result<()> {
                     .as_ref()
                     .unwrap()
                     .all_in_to;
-                session.send_command(app.prepare_action(Action::AllIn(amount))?)?;
+                // Exercise the same selector as the installed network table,
+                // including no-op navigation and repeated Enter suppression.
+                use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+                use terminal_poker::ui::action_selection::ActionSelection;
+                let view = app.view("network-action-selection");
+                let mut focus = ActionSelection::default();
+                focus.sync(&view, None, true);
+                for _ in 0..4 {
+                    if focus.selected() == Some(3) {
+                        break;
+                    }
+                    assert!(focus
+                        .handle_key(KeyEvent::new(KeyCode::Right, KeyModifiers::NONE))
+                        .is_none());
+                }
+                assert_eq!(focus.selected(), Some(3));
+                let action = focus
+                    .handle_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))
+                    .unwrap();
+                assert_eq!(action, Action::AllIn(amount));
+                session.send_command(app.prepare_action(action)?)?;
+                assert!(focus
+                    .handle_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE))
+                    .is_none());
+                focus.sync(&app.view("pending"), None, true);
+                assert_eq!(focus.enabled(), [false; 4]);
                 sent[index] = true;
                 break;
             }

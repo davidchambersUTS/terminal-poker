@@ -184,3 +184,13 @@ tests/showdown_network_test.rs
 tests/support/dedicated_journey.rs
 tests/tls_transport_test.rs
 tests/tournament_network_test.rs
+docs/adr/0023-game-lifecycle-cleanup.md
+docs/agile/BACKLOG_REVIEW_2026-09-10.md
+docs/development/SPRINT21_SOURCE_HANDOFF.md
+docs/TERMINAL_SUPPORT.md
+examples/review_sprint21.rs
+examples/sprint21_bitmap_spike.rs
+scripts/render_sprint21_captures.py
+scripts/sprint21_terminal_smoke.py
+src/server_admin.rs
+src/ui/action_selection.rs

@@ -777,6 +777,24 @@ pub fn render_practice_view_with_state(
     );
 }
 
+pub fn render_practice_view_with_actions(
+    frame: &mut Frame,
+    view: &MultiwayReviewView,
+    raise: Option<RaiseSizingView>,
+    console_scroll: usize,
+    showdown: Option<crate::ui::multiway_review::ShowdownStage>,
+    actions: &crate::ui::action_selection::ActionSelection,
+) {
+    crate::ui::ash_table::render_with_actions(
+        frame,
+        view,
+        console_scroll,
+        raise.map(|value| (value.preset_index, value.target)),
+        showdown,
+        Some(actions),
+    );
+}
+
 fn multiway_seat_areas(area: Rect, seat_count: usize) -> Vec<Rect> {
     if seat_count <= 6 {
         return Layout::default()

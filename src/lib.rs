@@ -25,3 +25,4 @@ pub mod ui;
 pub mod admission;
 pub mod game_invite;
 pub mod game_stream;
+pub mod server_admin;

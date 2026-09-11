@@ -1,3 +1,4 @@
+pub mod action_selection;
 pub mod app;
 pub mod ash_table;
 pub mod branded_menu;

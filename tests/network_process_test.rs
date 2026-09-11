@@ -185,7 +185,10 @@ fn two_tables_restart_from_checkpoint_and_complete_fresh_process_hands() {
         assert!(restored.hand_id > prior.hand_id);
         assert_eq!(restored.table_id, prior.table_id);
         assert_eq!(restored.chip_total, prior.chip_total);
-        assert_eq!(restored.initial_revision, 0);
+        // Another client may act before this process receives its bootstrap.
+        // Fresh revision zero is verified before actions in the registry tests;
+        // a live client's first observation need only precede its terminal view.
+        assert!(restored.initial_revision < restored.terminal_revision);
         assert_eq!(restored.initial_awards, 0);
         assert_eq!(restored.server_errors, 0);
     }
@@ -1007,4 +1010,57 @@ fn wait_failure_output(child: &mut Child, timeout: Duration) -> String {
             }
         }
     }
+}
+
+#[cfg(unix)]
+#[test]
+fn local_operator_socket_lists_and_removes_without_restart() {
+    use std::os::unix::fs::PermissionsExt;
+    use terminal_poker::server_admin::{request, AdminRequest};
+    let directory =
+        std::env::temp_dir().join(format!("poker-admin-process-{}", std::process::id()));
+    std::fs::create_dir_all(&directory).unwrap();
+    std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700)).unwrap();
+    let socket = directory.join("admin.sock");
+    let checkpoint = directory.join("registry.json");
+    let mut server = Command::new(env!("CARGO_BIN_EXE_poker-server"))
+        .args(["--multi-table", "--admin-socket"])
+        .arg(&socket)
+        .arg("--checkpoint")
+        .arg(&checkpoint)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let mut stdout = BufReader::new(server.stdout.take().unwrap());
+    let mut line = String::new();
+    stdout.read_line(&mut line).unwrap();
+    let address = line
+        .strip_prefix("LISTENING ")
+        .unwrap()
+        .split_whitespace()
+        .next()
+        .unwrap();
+    let created = create_table_process(address, "admin-creator", "Operator Room");
+    let listed = request(&socket, &AdminRequest::List).unwrap();
+    assert_eq!(listed["games"][0]["name"], "Operator Room");
+    assert_eq!(listed["games"][0]["connected_players"], 0);
+    assert_eq!(
+        std::fs::metadata(&socket).unwrap().permissions().mode() & 0o777,
+        0o600
+    );
+    let removed = request(&socket, &AdminRequest::ClearInactive).unwrap();
+    assert_eq!(removed["removed"], 1);
+    assert_eq!(
+        request(&socket, &AdminRequest::List).unwrap()["games"],
+        serde_json::json!([])
+    );
+    let restored =
+        terminal_poker::table_registry::TableRegistry::load_checkpoint(&checkpoint).unwrap();
+    assert!(restored.inspect(created.table_id).is_err());
+    // The same listener still accepts ordinary game traffic after cleanup.
+    create_table_process(address, "admin-next", "Next Room");
+    server.kill().unwrap();
+    server.wait().unwrap();
+    std::fs::remove_dir_all(directory).unwrap();
 }

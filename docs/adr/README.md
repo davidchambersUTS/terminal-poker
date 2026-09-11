@@ -39,3 +39,5 @@ Use ADRs for decisions that materially affect authority, privacy, protocol compa
 7. Add it to this index and `docs/agile/DECISIONS.md`.
 
 ADRs are immutable historical records after acceptance. Supersede them with a new ADR rather than rewriting the original decision.
+
+- [0023 - Game lifecycle cleanup](0023-game-lifecycle-cleanup.md)

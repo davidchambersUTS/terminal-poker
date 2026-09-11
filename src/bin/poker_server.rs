@@ -47,12 +47,49 @@ struct Args {
     history: Option<PathBuf>,
     #[arg(long, default_value_t = 900, requires = "multi_table")]
     table_idle_seconds: u64,
-    #[arg(long, default_value_t = 300, requires = "multi_table", value_parser = clap::value_parser!(u64).range(1..=3600))]
+    #[arg(long, default_value_t = 900, requires = "multi_table", value_parser = clap::value_parser!(u64).range(1..=3600))]
     reconnect_ttl_seconds: u64,
+    /// Private Unix socket for local operator commands (Linux/macOS).
+    #[arg(long)]
+    admin_socket: Option<PathBuf>,
+    #[arg(long, value_parser = ["list", "clear-inactive", "remove"], requires = "admin_socket")]
+    admin_action: Option<String>,
+    #[arg(long, requires = "admin_action")]
+    table_id: Option<u64>,
+    #[arg(long, requires = "admin_action")]
+    force: bool,
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
+    if let Some(action) = &args.admin_action {
+        use terminal_poker::server_admin::{request, AdminRequest};
+        let command = match action.as_str() {
+            "list" if args.table_id.is_none() && !args.force => AdminRequest::List,
+            "clear-inactive" if args.table_id.is_none() && !args.force => {
+                AdminRequest::ClearInactive
+            }
+            "remove" => AdminRequest::Remove {
+                table_id: terminal_poker::protocol::TableId(
+                    args.table_id.ok_or("remove requires --table-id")?,
+                ),
+                force: args.force,
+            },
+            _ => return Err("--table-id and --force apply only to remove".into()),
+        };
+        let response = request(
+            args.admin_socket.as_deref().expect("required socket"),
+            &command,
+        )?;
+        println!("{}", serde_json::to_string_pretty(&response)?);
+        if response.get("error").is_some() {
+            return Err("operator request rejected".into());
+        }
+        return Ok(());
+    }
+    if args.admin_socket.is_some() && !args.multi_table {
+        return Err("--admin-socket requires --multi-table when starting a server".into());
+    }
     if args.multi_table {
         let shutdown_requested = Arc::new(AtomicBool::new(false));
         let signal_flag = Arc::clone(&shutdown_requested);
@@ -72,6 +109,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             checkpoint_path: args.checkpoint,
             history_path: args.history,
             table_idle_ttl: Duration::from_secs(args.table_idle_seconds),
+            admin_socket: args.admin_socket,
             shutdown_requested,
             reconnect_credential_ttl: Duration::from_secs(args.reconnect_ttl_seconds),
         })?;

@@ -257,7 +257,7 @@ impl ProjectionClient {
                     "the latest projection contains no legal actions for this audience",
                 )
             })?;
-        if !action_is_legal(legal, action) {
+        if !action_is_legal(legal, self.snapshot.snapshot.current_wager, action) {
             return Err(ProjectionClientError::new(
                 ProjectionClientErrorCode::IllegalAction,
                 "the intention is outside the authoritative legal-action bounds",
@@ -448,7 +448,7 @@ fn validate_version(snapshot: &SnapshotEnvelope) -> Result<(), ProjectionClientE
     Ok(())
 }
 
-fn action_is_legal(legal: &MultiwayLegalActions, action: Action) -> bool {
+fn action_is_legal(legal: &MultiwayLegalActions, current_wager: u32, action: Action) -> bool {
     match action {
         Action::Fold => legal.can_fold,
         Action::Check => legal.can_check,
@@ -459,7 +459,9 @@ fn action_is_legal(legal: &MultiwayLegalActions, action: Action) -> bool {
         Action::Raise(amount) => legal
             .min_raise_to
             .is_some_and(|minimum| amount >= minimum && amount < legal.all_in_to),
-        Action::AllIn(amount) => amount == legal.all_in_to,
+        Action::AllIn(amount) => {
+            amount == legal.all_in_to && (amount <= current_wager || legal.raise_reopened)
+        }
     }
 }
 

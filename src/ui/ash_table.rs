@@ -85,6 +85,17 @@ pub fn render_with_state(
     raise: Option<(Option<usize>, u32)>,
     showdown: Option<ShowdownStage>,
 ) {
+    render_with_actions(frame, view, console_scroll, raise, showdown, None);
+}
+
+pub fn render_with_actions(
+    frame: &mut Frame<'_>,
+    view: &MultiwayReviewView,
+    console_scroll: usize,
+    raise: Option<(Option<usize>, u32)>,
+    showdown: Option<ShowdownStage>,
+    actions: Option<&crate::ui::action_selection::ActionSelection>,
+) {
     let viewport = frame.area();
     let showdown = if view.phase == MultiwayPhase::HandComplete {
         Some(ShowdownStage::Award)
@@ -131,7 +142,7 @@ pub fn render_with_state(
         render_showdown_panel(frame, view, bottom, stage);
     } else {
         render_console(frame, view, rows[3], console_scroll);
-        render_actions(frame, view, rows[4], raise);
+        render_actions(frame, view, rows[4], raise, actions);
         render_footer(frame, rows[5], raise);
     }
 }
@@ -950,7 +961,7 @@ fn render_console(
     let prompt = view.client.as_ref().map_or_else(
         || {
             if actor == Some(view.local_seat) && view.legal_actions.is_some() {
-                " YOU TO ACT".to_string()
+                " YOU TO ACT · ←/→ select · Enter act".to_string()
             } else {
                 " Waiting for action".to_string()
             }
@@ -961,7 +972,7 @@ fn render_console(
             } else if client.connection != "CONNECTED" {
                 format!(" {} · ACTIONS DISABLED", client.connection)
             } else if actor == Some(view.local_seat) && client.controls == "ENABLED" {
-                " YOU TO ACT".to_string()
+                " YOU TO ACT · ←/→ select · Enter act".to_string()
             } else {
                 " Waiting for action".to_string()
             }
@@ -1002,6 +1013,7 @@ fn render_actions(
     view: &MultiwayReviewView,
     area: Rect,
     raise: Option<(Option<usize>, u32)>,
+    actions: Option<&crate::ui::action_selection::ActionSelection>,
 ) {
     let controls = view
         .client
@@ -1016,8 +1028,25 @@ fn render_actions(
             if item.can_check {
                 "C CHECK".to_string()
             } else {
-                item.call_amount
-                    .map_or_else(|| "C CALL".to_string(), |amount| format!("C {amount}"))
+                let contribution = view
+                    .seats
+                    .iter()
+                    .find(|seat| seat.seat == view.local_seat)
+                    .map_or(0, |seat| seat.contribution);
+                let amount = item.call_amount.or_else(|| {
+                    (item.all_in_to <= view.current_wager)
+                        .then_some(item.all_in_to.saturating_sub(contribution))
+                });
+                amount.map_or_else(
+                    || "C CALL".to_string(),
+                    |amount| {
+                        if area.width < 72 {
+                            format!("C {amount}")
+                        } else {
+                            format!("C CALL {amount}")
+                        }
+                    },
+                )
             }
         },
     );
@@ -1039,25 +1068,29 @@ fn render_actions(
         raise_label,
         "A ALL-IN".to_string(),
     ];
-    let enabled = [
-        controls && legal.is_some_and(|item| item.can_fold),
-        controls && legal.is_some_and(|item| item.can_check || item.call_amount.is_some()),
-        controls
-            && legal.is_some_and(|item| item.min_raise_to.is_some() || item.min_bet_to.is_some()),
-        controls && legal.is_some(),
-    ];
+    let enabled = actions.map_or(
+        [
+            controls && legal.is_some_and(|item| item.can_fold),
+            controls && legal.is_some_and(|item| item.can_check || item.call_amount.is_some()),
+            controls
+                && legal
+                    .is_some_and(|item| item.min_raise_to.is_some() || item.min_bet_to.is_some()),
+            controls && legal.is_some(),
+        ],
+        |actions| actions.enabled(),
+    );
     let columns = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Ratio(1, 4); 4])
         .split(area);
     for index in 0..4 {
-        draw_action(
-            frame,
-            columns[index],
-            &labels[index],
-            enabled[index],
-            index == 1,
-        );
+        let primary = actions.map_or(index == 1, |actions| actions.selected() == Some(index));
+        let label = if primary && enabled[index] && actions.is_some() {
+            format!("> {}", labels[index])
+        } else {
+            labels[index].clone()
+        };
+        draw_action(frame, columns[index], &label, enabled[index], primary);
     }
 }
 

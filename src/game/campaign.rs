@@ -150,7 +150,7 @@ fn run_case(
         })?;
 
         assert_rejection_is_immutable(&mut hand, actor, &legal, occupancy, seed, &commands)?;
-        let action = choose_action(&legal, &mut rng);
+        let action = choose_action(&legal, hand.current_wager, &mut rng);
         let command = SeatCommand::new(actor, action);
         hand.apply_command(command).map_err(|_| {
             failure(
@@ -289,7 +289,7 @@ fn assert_invariants(
     Ok(())
 }
 
-fn choose_action(legal: &MultiwayLegalActions, rng: &mut StdRng) -> Action {
+fn choose_action(legal: &MultiwayLegalActions, current_wager: u32, rng: &mut StdRng) -> Action {
     let mut actions = Vec::with_capacity(6);
     if legal.can_fold {
         actions.push(Action::Fold);
@@ -306,7 +306,9 @@ fn choose_action(legal: &MultiwayLegalActions, rng: &mut StdRng) -> Action {
     if let Some(target) = legal.min_raise_to {
         actions.push(Action::Raise(target));
     }
-    actions.push(Action::AllIn(legal.all_in_to));
+    if legal.all_in_to <= current_wager || legal.raise_reopened {
+        actions.push(Action::AllIn(legal.all_in_to));
+    }
     *actions
         .choose(rng)
         .expect("an acting seat always has at least one legal action")

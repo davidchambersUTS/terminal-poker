@@ -1,62 +1,158 @@
 # Product Backlog
 
-Last reviewed: 2026-09-09. Sprint 20 completed 26/26: direct automatic LAN connection on TCP 6969.
-Current forecast **759**, accepted **644**, remaining **115**. No active sprint.
-LX-1/2/3 add 8 native Linux build/service/validation points for supplied hardware;
-the existing 8-point E12.10 client packaging scope remains separate.
-LB-1/2/3 add 21 explicitly refined local-lobby points. Sprint 18's 712/597/115
-baseline and historical acceptance are preserved; no public Join points awarded.
+Reviewed 2026-09-10 after owner feedback: Mac build works, terminal presentation
+varies, action selection needs Left/Right navigation, Study needs lessons and
+challenges, and bitmap/table-window designs merit investigation. Sprint 21 activated on 2026-09-11; see CURRENT_SPRINT.md.
 
-## Product direction and order
+**Revised planning forecast: 841 = 644 historically accepted + 197 remaining.**
+This replaces the prior 759/644/115 forecast; it awards no retrospective points.
+Conditional bitmap and separate-window implementations add **42** only if selected
+(239 remaining / 883 total in that scenario). They are not committed scope.
+Points express relative complexity, uncertainty and validation, not days or tokens.
 
-The supplied Fedora 44 x86_64 ThinkPadServer is the current dedicated host.
-The earlier Pi assumption is superseded for this milestone. Sprint 20 validates
-direct verified TLS on port 6969; cross-VLAN checks beyond the development PC remain rollout work.
-One server hosts multiple independent games. Game creators are clients; their
-exit must not terminate the server. Practice remains local. One unified UI.
+## Current evidence and priorities
 
-1. Reconcile requirements and source/release baseline.
-2. Completed Sprint 18: separate server and game lifetime; installed Host/Join and proof.
-3. Completed Sprint 19: remembered-server lobby, open/password games, installed evidence.
-4. Completed Sprint 20: native Linux server build, service and remote validation.
-5. Multiple-game/restart reliability and cross-VLAN rollout validation.
-6. Custom Practice, then client packaging and direct VLAN validation.
-7. Study histories/replay, statistics and notes.
-8. Multi-table tournament expansion (D2).
-9. Range Explorer and broader public release according to content/hosting decisions.
+The Fedora dedicated server and automatic verified-TLS LAN flow are deployed.
+It hosts independent games; D2 means one tournament spanning tables and is separate.
+The lifecycle follow-up is implemented/deployed with 327 Windows and 326 Linux
+passing tests; it is not yet committed. Five old finished games were removed.
+The owner confirms the Mac build worked; this does not establish consistent input,
+rendering, focus or image support across terminal emulators. The intermittent
+post-merge Apple Silicon restart-test failure remains open. Study is disabled in
+the current shell; history/research components are not a finished lesson product.
 
-Usability, privacy, tests and recovery boundaries apply to each slice. Commit/push
-and remote CI remain a separately authorized formal release gate; current work
-preserves local source snapshots and does not infer permission to publish.
+Recommended order: reliable shared baseline and observed terminal defects; action
+controls; rendering/window decisions; unified visual refresh and packaging; Custom
+Practice; a first structured Study course plus review tools; Range Explorer. D2
+and public internet release stay behind these private-player outcomes unless the
+owner explicitly changes direction. Existing poker/privacy gates apply throughout.
 
-## Current allocation
-
-| Work | Remaining points | State |
+| Workstream | Remaining points | Priority / estimate confidence |
 |---|---:|---|
-| LB local game lobby | 0 | Sprint 19 accepted 21/21 |
-| LX Linux dedicated host / LAN | 0 | Sprint 20 accepted 26/26: initial 8 plus LAN extension 18 |
-| DS dedicated-server ownership | 0 | Sprint 18 accepted 13/13 |
-| PX player experience | 47 | Practice 8; public Join 5; Study 13; ranges 8; packaging 8; final UX 5 |
-| D2 multi-table tournaments | 34 | Inactive; separate from concurrent independent games |
-| Public hardening | 34 | Transport 5; identity 8; operations 8; failure testing 8; candidate 5 |
+| Reliability, rollout and unresolved policy | 13 | P0-P2; medium |
+| Unified UI and terminal consistency | 24 | P1; medium |
+| Bitmap and table-window decision spikes | 6 | P1; bounded investigations |
+| Client packaging and maintenance | 13 | P1; medium |
+| Custom Practice | 13 | P2; medium |
+| Study: review tools + first structured course | 47 | P2; low until curriculum spike |
+| Range Explorer | 8 | P3; content gate |
+| D2 multi-table tournament expansion | 34 | P3; provisional, retained estimate |
+| Public discovery and public hardening | 39 | P4; provisional, retained estimate |
+| **Base remaining** | **197** | Sprint 21 active; no new acceptance yet |
 
-The 18-point LAN extension is explicitly refined under ADR 0022. Remaining public
-transport work covers trust distribution and internet deployment; implemented TLS
-is reused without awarding its implementation twice.
+The [full review](BACKLOG_REVIEW_2026-09-10.md) explains estimates, alternatives,
+course scope, prerequisites and the old-to-new allocation. All estimates below
+include focused regression, integration and documentation for their own outcome.
+Conditional work is not added twice to the base plan.
 
-## Current capability
+## Ordered executable backlog
 
-Core E0-E4 and ring lifecycle are accepted locally. E5/E6/E7 authority, network
-client and concurrent ring-table components have later normal-process evidence.
-E8 scoped credentials are wired; recovery is between hands, not active-hand crash
-durability. E9 D1 is accepted (55/89), D2 remains 34. E10/E11 have accepted local
-hardening/candidate slices; public release is open. E12 is 74/121 accepted.
-Sprint 17 added 26 accepted showdown points; current table protocol is v4; wire v5 and lobby v2 support listed passwords.
+P0 is immediate reliability; P1 is the next player-experience milestone; P2 is
+product depth; P3/P4 are later investments. Dependency order overrides numeric
+priority. Spikes end with evidence and a decision, not an automatic implementation.
 
-Latest installed build: game lobby, 314 tests passing, four ignored.
-Earlier totals, acceptance boundaries and follow-up records are preserved in
-pre-sprint archive (local archive: `rituals/2026-09-09-pre-sprint18/BACKLOG.md`).
-Portfolio review (local archive: `rituals/2026-09-09-full-backlog-review.md`).
+| ID | Outcome / acceptance boundary | Points | Depends on | Priority |
+|---|---|---:|---|---|
+| REL-1 | Reproduce and fix the intermittent restart-test failure; distinguish scheduling assumption from state defect; deterministic regression and clean four-platform CI | 3 | Existing failing CI evidence | P0 |
+| REL-2 | Reconcile deployed lifecycle source with the fork, include new files, verify exact source/artifact identity and reviewable handoff; no retrospective implementation credit | 2 | REL-1; separate commit/PR authorization | P0 |
+| REL-3 | Verify two-device LAN play, supported Mac terminal and remaining VLAN route, restart/rollback operations and ownership | 3 | Existing server; participant/admin availability | P0 |
+| REL-4 | Decide active-hand recovery target versus current between-hand rollback; failure experiment, RPO and follow-up estimate | 3 | Existing checkpoint contract | P1 |
+| POL-1 | Remove the requested 20-BB tournament starting-stack floor while retaining absolute/arithmetic limits and short-stack tests | 2 | DISC-016; current floor confirmed in code | P2 |
+| UX-1 | Reproduce emulator differences; record versions, font, cell/pixel size, key events, colour and graphics capability; publish supported baseline | 3 | Owner Mac observation | P1 |
+| UX-2 | Left/Right select legal Fold, Check/Call, Bet/Raise and All-in; Enter submits; visible focus/amount and no key-release/repeat/double submission | 5 | UX-1; current legal-action projection | P1 |
+| UX-3 | Refresh table, lobby, cards, pot and turn hierarchy as one responsive design; reuse existing states/renderer, preserve minimum fallback | 8 | UX-2, VIS-1, WIN-1 decisions | P1 |
+| UX-4 | Validate legibility, non-colour action cues, resize, first-use discoverability and complete hands on supported emulators | 5 | UX-3; final packaging checked before release | P1 |
+| UX-5 | Show the acting player's shot clock as a shrinking bar at the bottom of their player panel; derive it from the authoritative deadline, with readable time/urgency and safe reconnect/resize behavior | 3 | UX-1; existing server deadlines; integrate with UX-3 | P1 |
+| VIS-1 | Compare current text with bitmap cards/table using existing graphics support; measure resize, redraw, latency, memory and fallback; recommend approach | 3 | UX-1 | P1 |
+| WIN-1 | Prototype lobby-owned launch of one separate table terminal on Windows/Mac; test focus, safe credential handoff, cancellation and independent close; decide workflow | 3 | UX-1; DISC-001 | P1 |
+| PKG-1 | Reproducible Windows/macOS artifacts for the correct player binary and documented Linux server compatibility; clean-machine launch | 5 | REL-2, VIS-1/WIN-1 decisions | P1 |
+| PKG-2 | Install/update/rollback/uninstall with version checks, preserved player data and migration failure recovery | 5 | PKG-1 | P1 |
+| PKG-3 | Actionable terminal/connection diagnostics and supported-emulator onboarding without secrets or player SSH | 3 | UX-1, PKG-1 | P1 |
+| CP-1 | Bound Custom Practice configuration and deterministic bot styles; explicit private/public bot policy; no learned-policy claim | 3 | Existing practice; DISC-002 | P2 |
+| CP-2 | Configure 2-9 seats, stacks, blinds and approved bots; validate and repeat sessions through existing authority | 5 | CP-1, UX-2 | P2 |
+| CP-3 | Local-only pause/save/resume/end behavior with versioned private state and corrupted-save handling; never pause online authority | 5 | CP-2 | P2 |
+| RV-1 | Browse/filter player-authorized saved hands with versioned indexing and privacy tests | 5 | Existing safe histories; E12.6 replacement | P2 |
+| RV-2 | Step through a hand using a replay adapter over authorized recorded views; no hidden-card inference | 5 | RV-1, UX-3 | P2 |
+| RV-3 | Local notes and mode-separated statistics with sample-size/context labels | 3 | RV-1 | P2 |
+| ST-1 | Curriculum and grading spike: define six foundational lessons, 18 challenges, learning objectives, provenance and review rubric | 3 | Owner direction; content review | P2 |
+| ST-2 | Versioned lesson schema and lesson player with sequence, examples, navigation and accessibility | 5 | ST-1, shared shell | P2 |
+| ST-3 | Deterministic interactive challenge runner using existing authority/projections; accepted-action sets, immediate explanation and retry | 8 | ST-1, UX-2; reuse practice boundary | P2 |
+| ST-4 | Hints, worked explanations and targeted retry based on explicit learning objectives; no unsupported universal-best/GTO claims | 5 | ST-3 | P2 |
+| ST-5 | Local completion/mastery and attempt history, resume/reset and curriculum-version migration | 5 | ST-2, ST-3 | P2 |
+| ST-6 | Author/review first two lessons and six challenges; demonstrate complete lesson-to-challenge journey | 5 | ST-2, ST-3 | P2 |
+| ST-7 | Author/review four more lessons and twelve challenges; novice learning/usability evaluation and correction | 3 | ST-4, ST-5, ST-6 | P2 |
+| RG-1 | Range content schema, provenance and validation; agree synthetic versus reviewed strategy content | 3 | ST-1; content decision | P3 |
+| RG-2 | Range Explorer with context, labels and vetted/synthetic fixtures; link to lessons without implying solver accuracy | 5 | RG-1, ST-2 | P3 |
+| E9.4a | Deterministic multi-table balance selection | 8 | D1, REL-4 decision | P3 |
+| E9.4b | Atomic cross-table movement and route handoff | 8 | E9.4a | P3 |
+| E9.5 | Break tables and route survivors safely | 5 | E9.4b | P3 |
+| E9.7a | Consolidate to a final table | 5 | E9.5 | P3 |
+| E9.7b | Hand-for-hand coordination without information leakage | 5 | E9.4b; tournament clock | P3 |
+| E11.1h | Multi-table tournament candidate evidence | 3 | D2 stories | P3 |
+| E10.1b | Public endpoint/trust distribution and certificate lifecycle; reuse existing LAN TLS | 5 | Public service decision | P4 |
+| E10.2b | Public account identity and scoped authentication | 8 | Public identity policy | P4 |
+| E10.6b | Public operations, deployment ownership, backup/restore and support | 8 | REL-4, public capacity/hosting decisions | P4 |
+| E11.2 | Public failure/security/load validation against chosen objectives | 8 | Public transport/identity/operations | P4 |
+| E12.5b | Public discovery and online Join beyond the existing LAN directory | 5 | E10.1b, E10.2b | P4 |
+| E11.1j | Public candidate review and go-live evidence | 5 | Remaining public stories; explicit go-live approval | P4 |
+
+The 47 Study points comprise RV 13 + ST 34. The first teaching slice can be
+ST-1/2/3/6 (21 points); it does not wait for full hand-review tools, advanced hints
+or mastery tracking. The initial course is deliberately bounded; unlimited
+curriculum/content production is not included in these estimates.
+
+The owner's 2026-09-11 [learning specification draft](../study/LEARNING_SPECIFICATION.md)
+details ten courses, 60 lessons and 180 challenge briefs. It proposes a foundations-only
+first course instead of the earlier strategy sampler; reconcile that scope in ST-1.
+Courses 2–10, capstones and expanded variants are unestimated future content, not
+additions to the active sprint or accepted Study points. Drafting does not complete ST-1.
+
+### Shot-clock bar (owner request, 2026-09-10)
+
+UX-5 adds a horizontal countdown bar along the bottom of the acting player's
+card/panel (the seat panel, not an individual playing card). It starts full and
+shrinks with time remaining; show seconds alongside it so urgency is not conveyed
+by colour alone. Only the player currently owing an action has an active bar.
+Use the existing server-issued deadline/duration and monotonic client timing;
+refresh or reconnect must resynchronise, never grant extra action time. Clear it
+when the action/turn ends, the player folds, or the hand enters showdown. If the
+deadline is unavailable or the connection is lost, show unavailable/reconnecting
+rather than a fabricated fresh countdown. Zero is a display state: only the server
+may apply timeout/check/fold. Preserve readable cards/stacks at compact sizes and
+reuse the same timer model if bitmap panels or separate table windows are chosen.
+Cover deadline updates, elapsed/zero time, rapid turn changes, reconnect and resize.
+No new time-bank feature, timeout policy or practice deadline is introduced; local
+Practice shows a bar only where an authoritative timed turn exists.
+
+## Conditional options, excluded from 197
+
+| ID | Outcome | Points | Activation gate |
+|---|---|---:|---|
+| VIS-2 | Original card/table asset set, scales and accessible textual equivalents | 5 | VIS-1 selects terminal bitmaps |
+| VIS-3 | Bitmap renderer from authorized projection with asset reuse and bounded redraw | 8 | VIS-2; preserve shared action model |
+| VIS-4 | Capability fallback, performance and supported-terminal visual regression | 8 | VIS-3; distinct image-specific coverage |
+| WIN-2 | Safe launch/handoff to a separate terminal running the installed app; recover failed launch without duplicate join | 8 | WIN-1 selects child-terminal workflow |
+| WIN-3 | Lobby/table independent close, reconnect, focus and orphan recovery | 5 | WIN-2 |
+| WIN-4 | Several independent table windows for one user with scoped sessions and clear attention cues | 5 | Explicit multi-tabling policy; WIN-3 |
+| WIN-5 | Cross-platform installed multi-window acceptance | 3 | WIN-2/3; WIN-4 if selected |
+| **Conditional total** | **Bitmaps 21; table windows 21** | **42** | Re-estimate after spikes |
+
+A graphical desktop client is a different option, not another renderer silently
+included in VIS-3. If spikes favour an application-owned graphics window, estimate
+and approve that alternative before implementation. Native mobile/web remains parked.
+
+## Sprint 21 - activated 2026-09-11
+
+**16 points:** REL-1 (3), REL-2 (2), REL-3 (3), UX-1 (3), UX-2 (5).
+Outcome: a reproducible shared build with reliable arrow-key actions and an
+observed terminal support baseline. If external rollout access blocks REL-3,
+substitute VIS-1 (3) and keep the rollout gate open. The owner activated this slice on 2026-09-11. Source publication and deployment remain separate final actions.
+
+## Historical catalogue and acceptance
+
+The sections below preserve accepted stories and dated follow-ups. Remaining
+legacy epic placeholders are superseded by the executable rows above and must
+not be summed again. Historical point totals describe their dated baseline.
 
 ## Sprint 19
 
@@ -163,15 +259,15 @@ remembers it. Lobby is discovery on that server, not VLAN broadcast discovery.
 | E12.8b | Replace the production breakpoint renderer swap with one full-terminal portrait-first responsive table | 8 | E12.8, E12.9 | Done - Sprint 16 accepted; one production composition spans the approved 80x30, 72x32, 64x36, and 56x40 support staircase through large viewports |
 | E12.11a | Prove the installed journey across CMD, PowerShell, Git Bash, viewports, and capability fallbacks | 3 | E12.1-E12.3b, E12.8-E12.9 | Sprint 14 accepted; installed cross-shell full journeys, final-candidate smokes, viewport/capability/failure matrix, and restoration evidence pass |
 | E12.11c | Prove the installed single table across minimum/primary/large viewports, live resize, shells, capabilities, visual consistency, and human review | 5 | E12.8b, E12.11a | Done - Sprint 16 accepted; deterministic Ratatui viewport/hand evidence, cross-shell installed smokes, privacy/conservation checks, and an eight-page visually inspected PDF pass |
-| E12.3c | Add Custom Practice for two to nine seats with bounded bot profiles | 8 | E12.3b | Deferred until dedicated-server lifecycle is established; bot scope requires refinement |
+| E12.3c | Add Custom Practice for two to nine seats with bounded bot profiles | 8 | E12.3b | Superseded by CP-1/2/3 (13 total); server-lifetime prerequisite delivered |
 | E12.4a | Integrate This-computer Host authority supervision, health, checkpoint, and safe drain | 8 | E12.1, E7, E8, host policy | Sprint 15 accepted |
 | E12.4b | Add the Host lobby, structure/registration UI, and opaque invite | 5 | E12.4a, E12.1, invite policy | Sprint 15 accepted |
 | E12.5a | Integrate private-invite/recent Join, waiting, credentials, and reconnect UX | 8 | E12.4a-E12.4b, E7, E8, invite policy | Sprint 15 accepted; This-computer private-invite path only |
 | E12.5b | Add public discovery and online Join reach | 5 | E12.5a, public identity/transport policy | Deferred; private LAN connection milestone precedes public discovery |
-| E12.6 | Build Study with authorized histories, replay, filters, statistics, notes, and Learn | 13 | E8.5a, E10.3b, E12.1 | Backlog; split before activation |
-| E12.7 | Build Range Explorer schema, provenance, validation, and synthetic-fixture UI | 8 | E12.6, content policy | Content decision required |
-| E12.10 | Deliver single-artifact packaging, atomic update/uninstall, data preservation, and diagnostics | 8 | E12.1-E12.9 | Backlog |
-| E12.11b | Iterate control discoverability, then run first-time usability, accessibility, installed E2E, and final PX release evidence | 5 | E12.3c-E12.10 | Controls implemented in follow-ups; complete first-time usability/accessibility and PX evidence remain |
+| E12.6 | Build Study with authorized histories, replay, filters, statistics, notes, and Learn | 13 | E8.5a, E10.3b, E12.1 | Superseded by RV-1/2/3 (13) plus ST-1 through ST-7 (34) |
+| E12.7 | Build Range Explorer schema, provenance, validation, and synthetic-fixture UI | 8 | Content policy | Superseded by RG-1/2; 8 retained |
+| E12.10 | Deliver single-artifact packaging, atomic update/uninstall, data preservation, and diagnostics | 8 | E12.1-E12.9 | Superseded by PKG-1/2/3 (13); do not double count |
+| E12.11b | Iterate control discoverability, then run first-time usability, accessibility, installed E2E, and final PX release evidence | 5 | E12.3c-E12.10 | Superseded by UX-1 through UX-5 (24); original 5 counted only through that replacement |
 | E9.0 | Approve the functional single-table tournament policy and configuration contract | 3 | Product owner, rules examples | Sprint 15 accepted |
 | E9.1a | Build bounded Host tournament setup for entrants/table size, starting stack, starting blinds/antes, level timer/schedule, breaks, and play-money payouts | 5 | E9.0, E7, E8 | Sprint 15 accepted; configuration is editable before lock and server-owned after start |
 | E9.1b | Add bounded idempotent registration, configuration lock, under-minimum cancellation, and setup summary | 3 | E9.1a, E7, E8 | Sprint 15 accepted |
@@ -196,8 +292,8 @@ Add newly discovered work here before assigning it to an epic.
 
 | ID | Description | Source | Proposed epic | State |
 |---|---|---|---|---|
-| DISC-001 | Decide whether one terminal client may play multiple tables | Requirements review | E6/E7 | Backlog |
-| DISC-002 | Decide public/private bot policy | Requirements review | E1/E7 | Backlog |
+| DISC-001 | Decide whether one terminal client may play multiple tables | Requirements review | E6/E7 | Refined into WIN-1 and conditional WIN-2 through WIN-5; independent table windows are not D2 |
+| DISC-002 | Decide public/private bot policy | Requirements review | E1/E7 | CP-1 covers practice scope; public bot admission remains an explicit policy gate |
 | DISC-003 | Normal executable remained on the legacy heads-up engine while network UI evidence used review fixtures | 2026-08-31 release rebase | E1/E6 | Converted to E6.3b and E1.7 |
 | DISC-004 | Multi-table acceptance server completes configured hands but lacks a persistent per-table rollover loop | Sprint 10 review | E7 | Converted to E7.7 |
 | DISC-005 | Replace fragmented player commands with one installed `sneakyblinders` application shell for Practice, Host, Join, Study, Settings, and Help | Player experience requirements | E12 | Converted to E12.1-E12.11b; Home/Quick PX1 slice accepted in Sprint 14 |
@@ -212,14 +308,14 @@ Add newly discovered work here before assigning it to an epic.
 | DISC-013 | Refine the parallel policy-learning programme beginning with an independently validated mathematical oracle while preserving ADR 0016 | Policy-harness reassessment | Separate proposed AI epic | Initial deal, observation, action, arena, CLI, benchmark, and conformance foundation implemented outside sprint; next slice is unestimated and inactive |
 | DISC-014 | Improve gameplay-control discoverability without regressing keyboard efficiency or terminal compactness | Sprint 14 product-owner retest | E12 | Folded into E12.11b and the acceptance criteria of every new PX2/PX3 journey; current build is functional and replayable, not yet intuitive |
 | DISC-015 | Give the tournament host bounded pre-start control of table capacity, starting stack, starting blinds/antes, level timing/schedule, breaks, and play-money payout structure | Post-Sprint-14 product direction | E9 | Converted to E9.0, E9.1a-E9.1b, E9.2b, E9.3a, and E9.6 without changing the existing 55-point single-table allocation; exact limits/presets remain refinement work |
-| DISC-016 | Remove the tournament starting-stack minimum expressed as a number of big blinds while retaining absolute chip, arithmetic, and protocol safety bounds | Sprint 15 product-owner review | E9 | Ready for refinement; do not silently remove absolute validation bounds |
+| DISC-016 | Remove the tournament starting-stack minimum expressed as a number of big blinds while retaining absolute chip, arithmetic, and protocol safety bounds | Sprint 15 product-owner review | E9 | POL-1 (2); floor still present in source, absolute/arithmetic bounds retained |
 | DISC-017 | Converge compact and large table layouts around one smaller portrait-first composition instead of materially different compact/landscape variants | Sprint 15 product-owner review | E12 | Resolved by Sprint 16 through E12.8b/E12.11c and D-036; the approved support staircase bottoms at 56x40 and preserves one portrait composition |
 | DISC-018 | Separate holding brackets from suit glyphs and replace the modal raise-confirm flow with directly adjustable sizing, preset hotkeys, and immediate R submission | Post-Sprint-16 product-owner feedback | E12 | Implemented outside a sprint without points: padded holdings; Up/Down one-chip adjustment; 1-5 hotkeys for 25/50/75/pot/1.5x-pot targets; immediate R bet/raise; focused/full gates, real-Ratatui visual inspection, exact installation, and cross-shell smokes pass; human retest pending |
 | DISC-019 | Replace the sub-second terminal hold with staged showdown, winner, and award presentation; distinguish folds/mucks and show each winner's playing five and payout | Post-Sprint-16 product-owner feedback | E12 | Implemented outside a sprint without points; full gate, six-frame real-Ratatui visual inspection, exact install, and cross-shell smokes pass; human retest pending |
 | DISC-020 | Include all kickers in complete-hand comparisons so best-five presentation and authoritative pot winners agree with poker ranking | Installed Quick Practice on 2026-09-07 | E2/E12 | Fixed in source outside a sprint without points; regression coverage includes the played hand, all four affected categories, 2-9-seat main/side pots, genuine board ties, and standard/minimum production rendering. See defect record (local archive: `rituals/2026-09-07-kicker-comparison-fix.md`) for validation and installation. |
 
-The policy-learning programme is excluded from the 660-point product baseline,
-the 558 accepted points, and the 115-point remaining roadmap. Environment
+The policy-learning programme is excluded from the revised 841-point forecast,
+644 historically accepted points and 197-point remaining roadmap. Environment
 throughput is not policy quality, and no retrospective points are assigned to the
 implemented foundation.
 
@@ -247,30 +343,27 @@ CMD. One-line shared symbol fix; no sprint or points added.
 
 ## Icebox
 
-- Durable user accounts and password recovery
-- One user playing multiple tables simultaneously
+- Durable user accounts and password recovery: retained within public identity E10.2b, not an extra uncounted epic
+- One user playing multiple tables simultaneously: moved to WIN-1 decision and conditional WIN-4
 - Spectator mode
 - Chat and moderation
 - Re-entry and rebuy tournaments
 - Multiple deployment regions
 - Graphical, web, and mobile clients
 - Provably fair commit/reveal shuffling
-- Real-money wagering, which requires a separate regulated programme
+- Real-money wagering, which is outside this product scope
 
-## Unmapped requirements requiring refinement
+## Reconciled previously unmapped requirements
 
-- Practice durable save/resume/pause and session-end restart behavior.
-- Distinct bot styles; learned policy remains outside the product baseline.
-- Active-hand recovery versus between-hand public RPO (PD-006/PD-010).
-- DISC-016 removal of the tournament 20-BB floor, retaining arithmetic bounds.
-- Source checkpoint/remote CI and service operation ownership.
-
-Public hardening catalogue: E10.1b 5, E10.2b 8, E10.6b 8, E11.2 8,
-E11.1j 5. Scope remains as recorded in the prior remaining-milestones plan.
-
-Follow-up for connection UX: registration waits and reconnect retry loops need
-responsive cancellation/status rather than synchronous waiting; refine with LAN
-connectivity work. Existing waiting behavior is not changed by Sprint 18.
+- Practice save/resume/pause: CP-3; approved bot styles: CP-1/2.
+- Active-hand durability: REL-4 decides the target; implementation remains
+  unestimated until that decision and is not concealed in public operations.
+- Tournament 20-BB floor: POL-1. Source/CI handoff: REL-1/2. Rollout ownership: REL-3.
+- Initial connection/wait cancellation was delivered in Sprint 20; retain its
+  regression coverage. Treat a newly observed blocked phase as a defect, not an
+  untouched networking epic.
+- Learned policy, live HUD and other icebox ideas are reviewed in the full review;
+  they have no approved implementation scope and are excluded from totals.
 
 ### Sprint 19 follow-through
 
@@ -293,6 +386,10 @@ and deployed. Added shared-IP and delayed-join regressions. No new points or
 reordering; see rituals/2026-09-09-waiting-host-fix.md.
 
 Release-preparation audit: exact proposed source checkout and fork-PR route
-recorded in ../development/PR_TRACKING_AUDIT.md. Source isolation passes; macOS CI,
-portable onboarding and final staged-diff review remain before PR readiness.
+recorded in ../development/PR_TRACKING_AUDIT.md. The baseline PR is merged into the fork, onboarding exists, and the owner
+reports the Mac build works. REL-1/2 track CI reliability and the uncommitted lifecycle delta.
 No new sprint or points; existing packaging/release allocation unchanged.
+
+### Dedicated game lifecycle follow-up (2026-09-10)
+
+Owner-approved bounded implementation: 10-minute empty waiting lobbies, 15-minute all-disconnected games, 5-minute finished games; durable removal and local operator list/remove/clear-inactive. Implemented and deployed outside a sprint; Windows 327/Linux 326 tests pass, native build and live TLS game/cleanup pass. Five old finished games removed; running game retained under abandonment policy. Human retest and source commit/PR pending. No new sprint or points. See ADR 0023. The earlier intermittent Mac restart-test failure remains a separate reliability follow-up.

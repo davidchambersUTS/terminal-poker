@@ -664,6 +664,9 @@ impl MultiwayHand {
                 }
             }
             Action::Raise(_) => Err(ActionError::RaiseNotAllowed),
+            Action::AllIn(actual) if actual > self.current_wager && !legal.raise_reopened => {
+                Err(ActionError::RaiseNotReopened)
+            }
             Action::AllIn(actual) if actual == legal.all_in_to && actual > current => Ok(()),
             Action::AllIn(actual) => Err(ActionError::InvalidAllIn {
                 expected: legal.all_in_to,
@@ -1202,6 +1205,12 @@ mod tests {
         let legal = hand.legal_actions_for(seat(3)).unwrap();
         assert!(!legal.raise_reopened);
         assert_eq!(legal.min_raise_to, None);
+        let before = hand.clone();
+        assert_eq!(
+            hand.apply_command(SeatCommand::new(seat(3), Action::AllIn(100))),
+            Err(CommandError::IllegalAction(ActionError::RaiseNotReopened))
+        );
+        assert_eq!(format!("{hand:?}"), format!("{before:?}"));
         assert_eq!(
             hand.validate_command(SeatCommand::new(seat(3), Action::Raise(22))),
             Err(CommandError::IllegalAction(ActionError::RaiseNotReopened))

@@ -549,7 +549,8 @@ fn render_settings(
 fn render_help(frame: &mut Frame<'_>, app: &ShellApp, theme: &SemanticTheme) {
     let lines = vec![
         "HOME      ↑↓ move · Enter select · S settings · ? help · Q quit".to_string(),
-        "TABLE     F fold · C check/call · ↑/↓ size · R raise · A all-in".to_string(),
+        "TABLE     ←/→ select legal action · Enter act · ↑/↓ size".to_string(),
+        "SHORTCUTS F fold · C check/call · R bet/raise · A all-in".to_string(),
         "CONSOLE   PgUp/PgDn history · Home/End oldest/latest".to_string(),
         String::new(),
         "Quick Practice is play-money and server-authoritative in process.".to_string(),
@@ -557,7 +558,7 @@ fn render_help(frame: &mut Frame<'_>, app: &ShellApp, theme: &SemanticTheme) {
         "Host creates a game on your running server; Join browses its lobby. Study is unavailable."
             .to_string(),
         String::new(),
-        "80×24 compact · 120×40 standard · 160×50 wide".to_string(),
+        "TABLE     80x30 / 72x32 / 64x36 / 56x40 minimum layouts".to_string(),
         "Home fits 40x20; Settings and Help need 80x24. Esc returns Home.".to_string(),
     ];
     render_detail_screen(

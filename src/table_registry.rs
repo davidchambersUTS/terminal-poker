@@ -248,6 +248,8 @@ struct RegisteredTable {
     waiting: VecDeque<WaitingEntry>,
     pending_departures: BTreeSet<GuestSessionId>,
     last_activity: Instant,
+    empty_since: Option<Instant>,
+    finished_since: Option<Instant>,
     runtime: Option<AuthorizedTableRuntime>,
     handle: Option<AuthorizedTableHandle>,
 }
@@ -403,6 +405,8 @@ impl TableRegistry {
             waiting: VecDeque::new(),
             pending_departures: BTreeSet::new(),
             last_activity: Instant::now(),
+            empty_since: None,
+            finished_since: None,
             runtime: None,
             handle: None,
         };
@@ -860,6 +864,7 @@ impl TableRegistry {
         table.durable_lifecycle = durable_lifecycle;
         table.seat_sessions = seat_sessions;
         table.tournament = tournament;
+        table.empty_since = None;
         table.last_activity = Instant::now();
         if let Some((hand_id, runtime, handle)) = prepared_runtime {
             table.hand_id = Some(hand_id);
@@ -966,6 +971,7 @@ impl TableRegistry {
             requested_seat,
         });
         table.last_activity = Instant::now();
+        table.empty_since = None;
         self.waiting_sessions.insert(session, table_id);
         self.bump_revision();
         let table = self.tables.get(&table_id).expect("queued table remains");
@@ -1591,6 +1597,14 @@ impl TableRegistry {
         &mut self,
         path: &Path,
     ) -> Result<RegistryCheckpointReceipt, TableRegistryError> {
+        self.save_checkpoint_excluding(path, &BTreeSet::new())
+    }
+
+    fn save_checkpoint_excluding(
+        &mut self,
+        path: &Path,
+        excluded: &BTreeSet<TableId>,
+    ) -> Result<RegistryCheckpointReceipt, TableRegistryError> {
         let started = Instant::now();
         if path.file_name().is_none() {
             return Err(TableRegistryError::new(
@@ -1601,6 +1615,7 @@ impl TableRegistry {
         let tables = self
             .tables
             .iter()
+            .filter(|(table_id, _)| !excluded.contains(table_id))
             .map(|(&table_id, table)| {
                 table
                     .durable_lifecycle
@@ -1624,6 +1639,7 @@ impl TableRegistry {
         let sessions = self
             .sessions
             .iter()
+            .filter(|(_, route)| !excluded.contains(&route.table_id))
             .map(|(session, route)| CheckpointSession {
                 principal_id: session.stable_value().to_string(),
                 table_id: route.table_id,
@@ -1636,11 +1652,18 @@ impl TableRegistry {
             next_table_id: self.next_table_id,
             next_player_id: self.next_player_id,
             next_hand_id: self.next_hand_id,
-            registry_revision: self.revision,
+            registry_revision: self
+                .revision
+                .saturating_add(u64::from(!excluded.is_empty())),
             credential_capacity: DEFAULT_CREDENTIAL_CAPACITY,
             tables,
             sessions,
-            credentials: self.credentials.durable_records(),
+            credentials: self
+                .credentials
+                .durable_records()
+                .into_iter()
+                .filter(|record| !excluded.contains(&record.table_id()))
+                .collect(),
         };
         let payload_bytes = serde_json::to_vec(&payload).map_err(checkpoint_serialization_error)?;
         let checksum = format!("fnv1a64:{:016x}", fnv1a64(&payload_bytes));
@@ -1690,7 +1713,9 @@ impl TableRegistry {
             bytes: bytes.len(),
             tables: envelope.payload.tables.len(),
             sessions: envelope.payload.sessions.len(),
-            registry_revision: self.revision,
+            registry_revision: self
+                .revision
+                .saturating_add(u64::from(!excluded.is_empty())),
         })
     }
 
@@ -1764,6 +1789,8 @@ impl TableRegistry {
                         waiting: VecDeque::new(),
                         pending_departures: BTreeSet::new(),
                         last_activity: Instant::now(),
+                        empty_since: None,
+                        finished_since: None,
                         runtime: None,
                         handle: None,
                     },
@@ -1995,8 +2022,191 @@ impl TableRegistry {
         }
     }
 
+    /// Operator views contain no session identities, credentials or cards.
+    pub fn operator_games(&self, connected: &BTreeSet<GuestSessionId>) -> Vec<OperatorGame> {
+        self.tables
+            .iter()
+            .map(|(&id, table)| OperatorGame {
+                table_id: id,
+                name: table.config.name.clone(),
+                state: table.cleanup_state(),
+                connected_players: table
+                    .seat_sessions
+                    .values()
+                    .chain(table.waiting.iter().map(|entry| &entry.session))
+                    .filter(|session| connected.contains(*session))
+                    .count(),
+            })
+            .collect()
+    }
+
+    pub fn note_connected(&mut self, session: &GuestSessionId) {
+        if let Some(route) = self.sessions.get(session) {
+            if let Some(table) = self.tables.get_mut(&route.table_id) {
+                table.empty_since = None;
+            }
+        }
+    }
+
+    pub fn note_disconnected(&mut self, session: &GuestSessionId) {
+        self.credentials
+            .retain_connected(session, self.reconnect_ttl);
+    }
+
+    pub fn expire_games(
+        &mut self,
+        connected: &BTreeSet<GuestSessionId>,
+        now: Instant,
+        abandoned_after: Duration,
+        checkpoint: Option<&Path>,
+    ) -> Result<usize, TableRegistryError> {
+        let mut expired = BTreeSet::new();
+        for session in connected {
+            self.credentials
+                .retain_connected(session, self.reconnect_ttl);
+        }
+        for game in self.operator_games(connected) {
+            let table = self
+                .tables
+                .get_mut(&game.table_id)
+                .expect("listed table exists");
+            if game.connected_players > 0 {
+                table.empty_since = None;
+            } else {
+                table.empty_since.get_or_insert(now);
+            }
+            let deadline = match game.state {
+                CleanupState::Finished => {
+                    let since = *table.finished_since.get_or_insert(now);
+                    Some((since, Duration::from_secs(5 * 60)))
+                }
+                CleanupState::Waiting => table
+                    .empty_since
+                    .map(|since| (since, Duration::from_secs(10 * 60))),
+                CleanupState::Running => table.empty_since.map(|since| (since, abandoned_after)),
+            };
+            if deadline.is_some_and(|(since, ttl)| now.saturating_duration_since(since) >= ttl) {
+                expired.insert(game.table_id);
+            }
+        }
+        self.remove_games(&expired, checkpoint)?;
+        Ok(expired.len())
+    }
+
+    pub fn operator_remove(
+        &mut self,
+        connected: &BTreeSet<GuestSessionId>,
+        table_id: Option<TableId>,
+        force: bool,
+        checkpoint: Option<&Path>,
+    ) -> Result<usize, TableRegistryError> {
+        if let Some(id) = table_id {
+            if !self.tables.contains_key(&id) {
+                return Err(unknown_table(id));
+            }
+        }
+        let mut ids = BTreeSet::new();
+        for game in self.operator_games(connected) {
+            if table_id.is_some_and(|id| id != game.table_id) {
+                continue;
+            }
+            let safe = game.state == CleanupState::Finished
+                || (game.state == CleanupState::Waiting && game.connected_players == 0);
+            if safe || (force && table_id.is_some()) {
+                ids.insert(game.table_id);
+            } else if table_id.is_some() {
+                return Err(TableRegistryError::new(
+                    TableRegistryErrorCode::TableNotRemovable,
+                    "game is active or has connected players; removing it requires --force",
+                ));
+            }
+        }
+        self.remove_games(&ids, checkpoint)?;
+        Ok(ids.len())
+    }
+
+    fn remove_games(
+        &mut self,
+        ids: &BTreeSet<TableId>,
+        checkpoint: Option<&Path>,
+    ) -> Result<(), TableRegistryError> {
+        if ids.is_empty() {
+            return Ok(());
+        }
+        // Publish deletion before releasing live authority. A failed write leaves
+        // all live games and routes intact; a crash after publication cannot revive them.
+        if let Some(path) = checkpoint {
+            self.save_checkpoint_excluding(path, ids)?;
+        }
+        let principals = self
+            .sessions
+            .iter()
+            .filter(|(_, route)| ids.contains(&route.table_id))
+            .map(|(session, _)| session.clone())
+            .chain(
+                self.waiting_sessions
+                    .iter()
+                    .filter(|(_, id)| ids.contains(id))
+                    .map(|(session, _)| session.clone()),
+            )
+            .collect::<BTreeSet<_>>();
+        for session in principals {
+            self.credentials.revoke_principal(&session);
+            self.sessions.remove(&session);
+            self.waiting_sessions.remove(&session);
+            self.retired_updates.remove(&session);
+        }
+        for id in ids {
+            self.credentials.revoke_table(*id);
+            self.tables.remove(id);
+            eprintln!("game_removed table_id={}", id.0);
+        }
+        self.bump_revision();
+        Ok(())
+    }
+
     fn bump_revision(&mut self) {
         self.revision = self.revision.saturating_add(1);
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CleanupState {
+    Waiting,
+    Running,
+    Finished,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OperatorGame {
+    pub table_id: TableId,
+    pub name: String,
+    pub state: CleanupState,
+    pub connected_players: usize,
+}
+
+impl RegisteredTable {
+    fn cleanup_state(&self) -> CleanupState {
+        if self.tournament.as_ref().is_some_and(|t| {
+            matches!(
+                t.status(),
+                TournamentStatus::Complete | TournamentStatus::Cancelled
+            )
+        }) || self.lifecycle.state() == TableRunState::Closed
+        {
+            CleanupState::Finished
+        } else if self
+            .tournament
+            .as_ref()
+            .is_some_and(|t| t.status() != TournamentStatus::Registering)
+            || self.runtime.is_some()
+            || self.lifecycle.hand_active()
+        {
+            CleanupState::Running
+        } else {
+            CleanupState::Waiting
+        }
     }
 }
 
@@ -2434,6 +2644,234 @@ mod tests {
     }
 
     #[test]
+    fn lifecycle_expiry_uses_presence_and_exact_waiting_deadline() {
+        let mut registry = TableRegistry::new(4).unwrap();
+        let empty = registry.create(config("Empty", 2), Some(1)).unwrap();
+        let occupied = registry.create(config("Occupied", 2), Some(2)).unwrap();
+        let player = guest("present");
+        registry
+            .join(player.clone(), occupied.table_id, None)
+            .unwrap();
+        let connected = BTreeSet::from([player.clone()]);
+        let now = Instant::now();
+        let ttl = Duration::from_secs(900);
+        assert_eq!(
+            registry.expire_games(&connected, now, ttl, None).unwrap(),
+            0
+        );
+        // Inspect/list traffic must not refresh the empty game's deadline.
+        registry.inspect(empty.table_id).unwrap();
+        registry.operator_games(&connected);
+        assert_eq!(
+            registry
+                .expire_games(&connected, now + Duration::from_secs(599), ttl, None)
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            registry
+                .expire_games(&connected, now + Duration::from_secs(600), ttl, None)
+                .unwrap(),
+            1
+        );
+        assert!(registry.inspect(occupied.table_id).is_ok());
+        let none = BTreeSet::new();
+        registry
+            .expire_games(&none, now + Duration::from_secs(601), ttl, None)
+            .unwrap();
+        registry.note_connected(&player);
+        registry
+            .expire_games(&none, now + Duration::from_secs(1000), ttl, None)
+            .unwrap();
+        assert_eq!(
+            registry
+                .expire_games(&none, now + Duration::from_secs(1201), ttl, None)
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            registry
+                .expire_games(&none, now + Duration::from_secs(1600), ttl, None)
+                .unwrap(),
+            1
+        );
+    }
+
+    #[test]
+    fn registration_between_sweeps_resets_the_empty_timer() {
+        let mut registry = TableRegistry::new(1).unwrap();
+        let game = registry.create(config("Brief Visit", 2), Some(10)).unwrap();
+        let now = Instant::now();
+        let none = BTreeSet::new();
+        let ttl = Duration::from_secs(900);
+        registry.expire_games(&none, now, ttl, None).unwrap();
+        registry
+            .join(guest("brief-visitor"), game.table_id, None)
+            .unwrap();
+        assert!(registry.tables[&game.table_id].empty_since.is_none());
+        // The join and departure were both between presence samples.
+        assert_eq!(
+            registry
+                .expire_games(&none, now + Duration::from_secs(600), ttl, None)
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            registry
+                .expire_games(&none, now + Duration::from_secs(1199), ttl, None)
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            registry
+                .expire_games(&none, now + Duration::from_secs(1200), ttl, None)
+                .unwrap(),
+            1
+        );
+    }
+
+    #[test]
+    fn abandoned_active_game_gets_fifteen_minutes_and_releases_routes() {
+        let mut registry = TableRegistry::new(1).unwrap();
+        let game = registry.create(config("Active", 2), Some(3)).unwrap();
+        let a = guest("abandon-a");
+        let b = guest("abandon-b");
+        registry.join(a.clone(), game.table_id, None).unwrap();
+        registry.join(b.clone(), game.table_id, None).unwrap();
+        let now = Instant::now();
+        let ttl = Duration::from_secs(900);
+        let none = BTreeSet::new();
+        assert_eq!(
+            registry.operator_games(&none)[0].state,
+            CleanupState::Running
+        );
+        registry.expire_games(&none, now, ttl, None).unwrap();
+        assert_eq!(
+            registry
+                .expire_games(&none, now + Duration::from_secs(899), ttl, None)
+                .unwrap(),
+            0
+        );
+        // One connected player retains the whole game and resets its timer.
+        registry
+            .expire_games(
+                &BTreeSet::from([b]),
+                now + Duration::from_secs(900),
+                ttl,
+                None,
+            )
+            .unwrap();
+        registry
+            .expire_games(&none, now + Duration::from_secs(901), ttl, None)
+            .unwrap();
+        assert_eq!(
+            registry
+                .expire_games(&none, now + Duration::from_secs(1800), ttl, None)
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            registry
+                .expire_games(&none, now + Duration::from_secs(1801), ttl, None)
+                .unwrap(),
+            1
+        );
+        assert!(registry.join_status(&a).is_err());
+        assert!(registry.retired_updates.is_empty());
+        assert!(registry.create(config("Replacement", 2), None).is_ok());
+    }
+
+    #[test]
+    fn finished_game_expires_after_five_minutes() {
+        let mut registry = TableRegistry::new(1).unwrap();
+        let game = registry.create(config("Finished", 2), None).unwrap();
+        registry
+            .tables
+            .get_mut(&game.table_id)
+            .unwrap()
+            .lifecycle
+            .close()
+            .unwrap();
+        let now = Instant::now();
+        let none = BTreeSet::new();
+        assert_eq!(
+            registry.operator_games(&none)[0].state,
+            CleanupState::Finished
+        );
+        registry
+            .expire_games(&none, now, Duration::from_secs(900), None)
+            .unwrap();
+        assert_eq!(
+            registry
+                .expire_games(
+                    &none,
+                    now + Duration::from_secs(299),
+                    Duration::from_secs(900),
+                    None
+                )
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            registry
+                .expire_games(
+                    &none,
+                    now + Duration::from_secs(300),
+                    Duration::from_secs(900),
+                    None
+                )
+                .unwrap(),
+            1
+        );
+    }
+
+    #[test]
+    fn operator_cleanup_is_safe_durable_and_failure_atomic() {
+        let mut registry = TableRegistry::new(3).unwrap();
+        let empty = registry.create(config("Empty", 2), None).unwrap();
+        let active = registry.create(config("Active", 2), Some(4)).unwrap();
+        let a = guest("operator-a");
+        registry.join(a.clone(), active.table_id, None).unwrap();
+        registry
+            .join(guest("operator-b"), active.table_id, None)
+            .unwrap();
+        let grant = registry.issue_reconnect_credential(&a).unwrap();
+        let connected = BTreeSet::from([a]);
+        let path = checkpoint_path("operator-cleanup");
+        registry.save_checkpoint(&path).unwrap();
+        assert!(registry
+            .operator_remove(&connected, Some(active.table_id), false, Some(&path))
+            .is_err());
+        // An invalid destination must leave even eligible games intact.
+        let bad = path.join("missing-parent").join("registry.json");
+        assert!(registry
+            .operator_remove(&connected, None, false, Some(&bad))
+            .is_err());
+        assert!(registry.inspect(empty.table_id).is_ok());
+        assert_eq!(
+            registry
+                .operator_remove(&connected, None, false, Some(&path))
+                .unwrap(),
+            1
+        );
+        let restored = TableRegistry::load_checkpoint(&path).unwrap();
+        assert!(restored.inspect(empty.table_id).is_err());
+        assert!(restored.inspect(active.table_id).is_ok());
+        assert_eq!(
+            registry
+                .operator_remove(&connected, Some(active.table_id), true, Some(&path))
+                .unwrap(),
+            1
+        );
+        let restored = TableRegistry::load_checkpoint(&path).unwrap();
+        assert!(restored.tables.is_empty());
+        assert!(restored.sessions.is_empty());
+        assert!(restored.credentials.durable_records().is_empty());
+        assert!(registry.identify_reconnect(&grant.token).is_err());
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
     fn expiry_sweep_is_bounded_observable_and_never_retires_routed_or_active_tables() {
         let mut registry = TableRegistry::new(4).unwrap();
         let empty = registry.create(config("Empty", 2), Some(1)).unwrap();
@@ -2566,6 +3004,67 @@ mod tests {
         let published: RegistryCheckpointEnvelope =
             serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
         assert_eq!(published.payload.tables.len(), 2);
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn restored_late_observer_sees_new_actions_not_a_stale_revision_zero() {
+        let path = checkpoint_path("late-observer");
+        let mut source = TableRegistry::new(1).unwrap();
+        let table = source
+            .create(config("Late observer", 2), Some(804))
+            .unwrap();
+        for seat in 0..2 {
+            source
+                .join(
+                    guest(&format!("late-{seat}")),
+                    table.table_id,
+                    Some(SeatId::new(seat).unwrap()),
+                )
+                .unwrap();
+        }
+        source.save_checkpoint(&path).unwrap();
+        let restored = TableRegistry::load_checkpoint(&path).unwrap();
+        let route = restored.route_for_session(&guest("late-0")).unwrap();
+        route.handle.reconnect(guest("late-0")).unwrap();
+        let fresh = route.handle.snapshot(guest("late-0")).unwrap();
+        assert_eq!(fresh.revision, 0);
+        assert!(fresh.snapshot.awards.is_empty());
+        let actor = fresh.snapshot.to_act.unwrap();
+        let actor_session = guest(&format!("late-{}", actor.as_u8()));
+        route.handle.reconnect(actor_session.clone()).unwrap();
+        let actor_view = route.handle.snapshot(actor_session.clone()).unwrap();
+        let legal = actor_view.snapshot.legal_actions.as_ref().unwrap();
+        let action = crate::network_client::passive_action(legal);
+        route
+            .handle
+            .submit(
+                actor_session,
+                CommandEnvelope::act_for_hand(
+                    "act-before-other-client-bootstrap",
+                    table.table_id,
+                    fresh.hand_id,
+                    fresh.revision,
+                    actor,
+                    action,
+                ),
+            )
+            .unwrap();
+        let observer = guest(&format!("late-{}", 1 - actor.as_u8()));
+        route.handle.reconnect(observer.clone()).unwrap();
+        let late = route.handle.snapshot(observer).unwrap();
+        assert_eq!(late.hand_id, fresh.hand_id);
+        assert_eq!(late.revision, 1);
+        assert!(late.snapshot.awards.is_empty());
+        assert_eq!(
+            late.snapshot
+                .seats
+                .iter()
+                .map(|seat| seat.stack)
+                .sum::<u32>()
+                + late.snapshot.pot_total,
+            200
+        );
         fs::remove_file(path).unwrap();
     }
 

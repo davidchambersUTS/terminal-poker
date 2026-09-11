@@ -145,3 +145,17 @@ Owner extended Sprint 20 and confirmed network-admin-approved TCP 6969.
 flow: verified TLS to 192.168.5.250:6969, embedded public CA, private host keys,
 bounded admission and automatic Host/Join. SSH is operator-only. Public release
 and cross-VLAN rollout proof beyond the tested development PC remain separate.
+
+## 2026-09-10: game lifecycle cleanup
+
+[ADR 0023](../adr/0023-game-lifecycle-cleanup.md) records the owner-approved 10/15/5-minute expiry policy, durable removal and private local operator commands.
+
+## 2026-09-10: UI, terminal workflow and structured Study planning
+
+Owner requested backlog additions and full re-estimation. The [review](BACKLOG_REVIEW_2026-09-10.md)
+records 197 base remaining points, 42 conditional presentation/window points and
+an inactive 16-point next candidate. Left/Right action selection is requested;
+bitmap rendering and child terminal windows remain decisions for bounded spikes.
+Study now distinguishes review tools from a six-lesson/18-challenge first course
+(proposed bounded planning assumption). No new sprint, architecture selection,
+implementation or retrospective point acceptance is implied.

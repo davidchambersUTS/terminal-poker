@@ -694,3 +694,16 @@ Host chooses name and optional 4-96 printable ASCII password (spaces retained).
 Password is masked, omitted from public summaries and client persistence, and
 stored only as a salted server verifier. Esc/disconnect releases pre-start
 registration; a concurrent start locks registration and uses normal game rules.
+
+### Dedicated game lifetime (2026-09-10)
+
+Owner-approved defaults: waiting games expire after 10 minutes without connected
+players; running games after 15 minutes with all players disconnected; completed
+or cancelled games after 5 minutes. Reconnection resets the empty-game timer;
+browsing does not. One connected player retains a waiting/running game regardless
+of whether the creator remains. Server restart grants retained games a fresh timer.
+Removal releases capacity and private routes and persists before acknowledgement,
+so removed games do not return on restart. Safe hand history remains separate.
+Local operators can list games, clear finished/empty waiting games, or remove a
+selected game; removing an active game requires an explicit force override.
+See [ADR 0023](docs/adr/0023-game-lifecycle-cleanup.md).

@@ -1,3 +1,20 @@
+# Current risk update - 2026-09-10
+
+- Mac compilation worked per owner; emulator consistency is unproven. UX-1 measures
+  hosts/versions, fonts, input and graphics; UX-2/4 prove controls and legibility.
+- Bitmap graphics may increase capability variance; VIS-1 decides before asset/
+  renderer investment. One shared interaction model and automatic fallback remain.
+- Child-terminal launch adds OS focus/session/credential-handoff risks; WIN-1
+  investigates before committing; no credentials in process arguments.
+- Study content and grading have low estimate confidence; ST-1 fixes the bounded
+  curriculum, provenance and review rubric. Solver/AI quality is not inferred.
+- An intermittent Apple Silicon restart assertion remains open (REL-1); lifecycle
+  source is deployed but not committed (REL-2). Between-hand recovery remains the
+  boundary; REL-4 decides whether active-hand durability becomes required.
+
+The following entries retain their dated risk context; completed LAN TLS and
+source-handoff work supersede older claims that those are wholly absent.
+
 # Current risk update - 2026-09-09
 
 Sprint 18 risk: client exit must not own server shutdown; test a separately

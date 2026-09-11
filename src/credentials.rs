@@ -203,6 +203,12 @@ pub struct DurableCredentialRecord {
     principal_id: String,
 }
 
+impl DurableCredentialRecord {
+    pub(crate) fn table_id(&self) -> TableId {
+        self.scope.table_id
+    }
+}
+
 struct StoredCredential {
     expires_at: SystemTime,
     scope: CredentialScope,
@@ -357,6 +363,23 @@ impl CredentialVault {
         self.entries
             .retain(|_, entry| &entry.principal != principal);
         before - self.entries.len()
+    }
+
+    pub(crate) fn revoke_table(&mut self, table_id: TableId) {
+        self.entries
+            .retain(|_, entry| entry.scope.table_id != table_id);
+    }
+
+    /// Only the server's authenticated socket presence may extend a grant.
+    pub(crate) fn retain_connected(&mut self, principal: &GuestSessionId, ttl: Duration) {
+        let expires_at = SystemTime::now() + ttl;
+        for entry in self
+            .entries
+            .values_mut()
+            .filter(|entry| &entry.principal == principal)
+        {
+            entry.expires_at = expires_at;
+        }
     }
 
     pub fn expire_at(&mut self, now: SystemTime) -> usize {
@@ -564,6 +587,46 @@ mod tests {
         let json = serde_json::to_string(&first).unwrap();
         assert!(!json.contains(code));
         assert!(first.is_valid());
+    }
+
+    #[test]
+    fn connected_grace_is_scoped_and_does_not_recreate_revoked_credentials() {
+        let mut vault = CredentialVault::new(4).unwrap();
+        let player = GuestSessionId::random();
+        let other = GuestSessionId::random();
+        let a = vault
+            .issue(
+                player.clone(),
+                scope(1, CredentialRole::Reconnect),
+                Duration::from_secs(10),
+            )
+            .unwrap();
+        let b = vault
+            .issue(
+                other,
+                scope(2, CredentialRole::Reconnect),
+                Duration::from_secs(10),
+            )
+            .unwrap();
+        let other_expiry = vault.entries[&token_verifier(&b.grant.token)].expires_at;
+        let before = SystemTime::now();
+        vault.retain_connected(&player, Duration::from_secs(900));
+        assert!(
+            vault.entries[&token_verifier(&a.grant.token)].expires_at
+                >= before + Duration::from_secs(900)
+        );
+        assert_eq!(
+            vault.entries[&token_verifier(&b.grant.token)].expires_at,
+            other_expiry
+        );
+        vault.revoke_table(TableId(1));
+        vault.retain_connected(&player, Duration::from_secs(900));
+        assert!(vault
+            .authenticate(&a.grant.token, CredentialRole::Reconnect)
+            .is_err());
+        assert!(vault
+            .authenticate(&b.grant.token, CredentialRole::Reconnect)
+            .is_ok());
     }
 
     #[test]

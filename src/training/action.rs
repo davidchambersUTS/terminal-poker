@@ -71,6 +71,15 @@ pub fn map_policy_action(
 ) -> Result<Action, PolicyActionError> {
     let legal = &observation.legal_actions;
     let contribution = observation.acting_seat_state().street_contribution;
+    if !legal.raise_reopened
+        && legal.all_in_to > observation.current_wager
+        && !matches!(
+            policy_action,
+            PolicyActionV1::Fold | PolicyActionV1::Check | PolicyActionV1::Call
+        )
+    {
+        return Err(PolicyActionError::Masked(policy_action));
+    }
     match policy_action {
         PolicyActionV1::Fold if legal.can_fold => Ok(Action::Fold),
         PolicyActionV1::Check if legal.can_check => Ok(Action::Check),

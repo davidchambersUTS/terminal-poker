@@ -15,7 +15,7 @@ use ratatui::Terminal;
 use terminal_poker::game::actions::Action;
 use terminal_poker::game_invite::game_server_address;
 use terminal_poker::lobby::{PublicTableFilter, PublicTableSummary, TableVisibility};
-use terminal_poker::local_practice::{LocalPractice, PracticeSession};
+use terminal_poker::local_practice::PracticeSession;
 use terminal_poker::local_profile::{LocalProfile, ProfileStore};
 use terminal_poker::network_client::ProjectionClient;
 use terminal_poker::network_session::{LobbySession, NetworkSession, NetworkSessionError};
@@ -23,6 +23,7 @@ use terminal_poker::protocol::TableId;
 use terminal_poker::tournament::{
     TournamentConfig, TournamentLevel, TournamentPayoutPlan, TournamentPublicState,
 };
+use terminal_poker::ui::action_selection::ActionSelection;
 use terminal_poker::ui::branded_menu::BrandedMenu;
 use terminal_poker::ui::game_lobby::{admission_label, render_game_lobby, GameLobby};
 use terminal_poker::ui::multiway_review::{terminal_hold, MultiwayReviewView, ShowdownStage};
@@ -31,7 +32,9 @@ use terminal_poker::ui::platform::{
     apply_terminal_palette, ColorDepth, PresentationEffects, SemanticTheme, TerminalCapabilities,
     ThemeMode,
 };
-use terminal_poker::ui::render::{render_practice_view_with_state, RaiseSizingView};
+use terminal_poker::ui::render::{
+    render_practice_view_with_actions, render_practice_view_with_state, RaiseSizingView,
+};
 use terminal_poker::ui::shell::{
     render_shell, render_tournament_entry, render_tournament_result, ShellApp, ShellEffect,
     ShellEvent, ShellRoute, HOME_MIN_HEIGHT, HOME_MIN_WIDTH, MIN_HEIGHT, MIN_WIDTH,
@@ -698,6 +701,7 @@ fn run_network_tournament(
     let mut terminal_since: Option<Instant> = None;
     let mut hand_started = Instant::now();
     let mut raise_sizing = None;
+    let mut action_selection = ActionSelection::default();
     let mut console_scroll = 0usize;
     let mut turn_attention = TurnAttention::default();
     loop {
@@ -730,13 +734,17 @@ fn run_network_tournament(
                 == terminal_poker::network_client::ClientConnectionState::Connected,
         );
         raise_sizing = RaiseSizing::sync_from_view(&view, raise_sizing);
+        let size = terminal.size()?;
+        let viewport_ok = terminal_poker::ui::ash_table::supports_viewport(size.width, size.height);
+        action_selection.sync(&view, raise_sizing.map(|sizing| sizing.target), viewport_ok);
         terminal.draw(|frame| {
-            render_practice_view_with_state(
+            render_practice_view_with_actions(
                 frame,
                 &view,
                 raise_sizing.map(Into::into),
                 console_scroll,
                 showdown,
+                &action_selection,
             );
             let area = frame.area();
             apply_terminal_palette(frame.buffer_mut(), area, theme_mode, color_depth);
@@ -793,6 +801,23 @@ fn run_network_tournament(
                 }
                 continue;
             }
+            if matches!(
+                key.code,
+                KeyCode::Left
+                    | KeyCode::Right
+                    | KeyCode::Enter
+                    | KeyCode::Char('f' | 'F' | 'c' | 'C' | 'r' | 'R' | 'a' | 'A')
+            ) {
+                if let Some(action) = action_selection.handle_key(key) {
+                    session.send_command(app.prepare_action(action)?)?;
+                    raise_sizing = None;
+                    console_scroll = 0;
+                }
+                continue;
+            }
+            if !viewport_ok {
+                continue;
+            }
             if let Some(control) = raise_control_for_key(key.code, raise_sizing) {
                 match control {
                     RaiseControl::Increase => {
@@ -830,11 +855,6 @@ fn run_network_tournament(
                     continue;
                 }
                 _ => {}
-            }
-            if let Some(action) = network_action_for_key(key.code, &app) {
-                session.send_command(app.prepare_action(action)?)?;
-                raise_sizing = None;
-                console_scroll = 0;
             }
         }
     }
@@ -913,20 +933,6 @@ fn reconnect_tournament(
             }
             Err(error) => return Err(Box::new(error)),
         }
-    }
-}
-
-fn network_action_for_key(code: KeyCode, app: &NetworkApp) -> Option<Action> {
-    if !app.client().controls_enabled() {
-        return None;
-    }
-    let legal = app.client().snapshot().snapshot.legal_actions.as_ref()?;
-    match code {
-        KeyCode::Char('f') | KeyCode::Char('F') if legal.can_fold => Some(Action::Fold),
-        KeyCode::Char('c') | KeyCode::Char('C') if legal.can_check => Some(Action::Check),
-        KeyCode::Char('c') | KeyCode::Char('C') => legal.call_amount.map(Action::Call),
-        KeyCode::Char('a') | KeyCode::Char('A') => Some(Action::AllIn(legal.all_in_to)),
-        _ => None,
     }
 }
 
@@ -1034,6 +1040,7 @@ fn run_quick_practice(
     let mut next_bot_action = Instant::now() + Duration::from_millis(500);
     let mut terminal_since = None;
     let mut raise_sizing = None;
+    let mut action_selection = ActionSelection::default();
     let mut console_scroll = 0usize;
     let mut turn_attention = TurnAttention::default();
     loop {
@@ -1080,13 +1087,17 @@ fn run_quick_practice(
             true,
         );
         raise_sizing = RaiseSizing::sync_from_view(&view, raise_sizing);
+        let size = terminal.size()?;
+        let viewport_ok = terminal_poker::ui::ash_table::supports_viewport(size.width, size.height);
+        action_selection.sync(&view, raise_sizing.map(|sizing| sizing.target), viewport_ok);
         terminal.draw(|frame| {
-            render_practice_view_with_state(
+            render_practice_view_with_actions(
                 frame,
                 &view,
                 raise_sizing.map(Into::into),
                 console_scroll,
                 showdown,
+                &action_selection,
             );
             let area = frame.area();
             apply_terminal_palette(frame.buffer_mut(), area, theme_mode, color_depth);
@@ -1118,6 +1129,24 @@ fn run_quick_practice(
                     .current_mut()
                     .set_showdown_preference(!view.always_show)?;
             }
+            continue;
+        }
+        if matches!(
+            key.code,
+            KeyCode::Left
+                | KeyCode::Right
+                | KeyCode::Enter
+                | KeyCode::Char('f' | 'F' | 'c' | 'C' | 'r' | 'R' | 'a' | 'A')
+        ) {
+            if let Some(action) = action_selection.handle_key(key) {
+                session.current_mut().submit_local(action)?;
+                raise_sizing = None;
+                console_scroll = 0;
+                next_bot_action = Instant::now() + Duration::from_millis(350);
+            }
+            continue;
+        }
+        if !viewport_ok {
             continue;
         }
         if let Some(control) = raise_control_for_key(key.code, raise_sizing) {
@@ -1166,12 +1195,6 @@ fn run_quick_practice(
                 continue;
             }
             _ => {}
-        }
-        if let Some(action) = action_for_key(key.code, session.current()) {
-            session.current_mut().submit_local(action)?;
-            raise_sizing = None;
-            console_scroll = 0;
-            next_bot_action = Instant::now() + Duration::from_millis(350);
         }
     }
 }
@@ -1437,26 +1460,6 @@ fn shell_event_for_key(
 
 fn is_actionable_key(key: &KeyEvent) -> bool {
     matches!(key.kind, KeyEventKind::Press | KeyEventKind::Repeat)
-}
-
-fn action_for_key(code: KeyCode, practice: &LocalPractice) -> Option<Action> {
-    if !practice.app().client().controls_enabled() {
-        return None;
-    }
-    let legal = practice
-        .app()
-        .client()
-        .snapshot()
-        .snapshot
-        .legal_actions
-        .as_ref()?;
-    match code {
-        KeyCode::Char('f') | KeyCode::Char('F') if legal.can_fold => Some(Action::Fold),
-        KeyCode::Char('c') | KeyCode::Char('C') if legal.can_check => Some(Action::Check),
-        KeyCode::Char('c') | KeyCode::Char('C') => legal.call_amount.map(Action::Call),
-        KeyCode::Char('a') | KeyCode::Char('A') => Some(Action::AllIn(legal.all_in_to)),
-        _ => None,
-    }
 }
 
 fn install_panic_restore_hook() {

@@ -63,6 +63,7 @@ pub struct MultiTableNetworkServerConfig {
     pub checkpoint_path: Option<PathBuf>,
     pub history_path: Option<PathBuf>,
     pub table_idle_ttl: Duration,
+    pub admin_socket: Option<PathBuf>,
     pub shutdown_requested: Arc<AtomicBool>,
     pub reconnect_credential_ttl: Duration,
 }
@@ -78,8 +79,9 @@ impl Default for MultiTableNetworkServerConfig {
             checkpoint_path: None,
             history_path: None,
             table_idle_ttl: Duration::from_secs(15 * 60),
+            admin_socket: None,
             shutdown_requested: Arc::new(AtomicBool::new(false)),
-            reconnect_credential_ttl: Duration::from_secs(5 * 60),
+            reconnect_credential_ttl: Duration::from_secs(15 * 60),
         }
     }
 }
@@ -172,6 +174,7 @@ pub struct MultiTableNetworkServer {
     history_path: Option<PathBuf>,
     history_recovery: HistoryRecoveryStatus,
     table_idle_ttl: Duration,
+    admin: Option<crate::server_admin::ServerAdmin>,
     shutdown_requested: Arc<AtomicBool>,
 }
 
@@ -220,6 +223,11 @@ impl MultiTableNetworkServer {
             history_path: config.history_path,
             history_recovery,
             table_idle_ttl: config.table_idle_ttl,
+            admin: config
+                .admin_socket
+                .as_deref()
+                .map(crate::server_admin::ServerAdmin::bind)
+                .transpose()?,
             shutdown_requested: config.shutdown_requested,
         })
     }
@@ -274,10 +282,36 @@ impl MultiTableNetworkServer {
                 break;
             }
             if last_expiry_sweep.elapsed() >= Duration::from_secs(1) {
+                let connected = self.active_sessions.lock().map_err(|_| {
+                    NetworkServerError::Authority("active sessions poisoned".into())
+                })?;
                 if let Ok(mut registry) = self.registry.lock() {
                     let _ = registry.advance_tournament_breaks();
-                    expired_tables = expired_tables
-                        .saturating_add(registry.expire_inactive(self.table_idle_ttl).expired);
+                    match registry.expire_games(
+                        &connected,
+                        Instant::now(),
+                        self.table_idle_ttl,
+                        self.checkpoint_path.as_deref(),
+                    ) {
+                        Ok(count) => expired_tables = expired_tables.saturating_add(count),
+                        Err(error) => {
+                            eprintln!("game_cleanup_failed retry=next_sweep error={error}")
+                        }
+                    }
+                    if let Some(admin) = &self.admin {
+                        admin.poll(|request| {
+                            use crate::server_admin::AdminRequest;
+                            let result = match request {
+                                AdminRequest::List => return serde_json::json!({"games": registry.operator_games(&connected)}),
+                                AdminRequest::ClearInactive => registry.operator_remove(&connected, None, false, self.checkpoint_path.as_deref()),
+                                AdminRequest::Remove { table_id, force } => registry.operator_remove(&connected, Some(table_id), force, self.checkpoint_path.as_deref()),
+                            };
+                            match result {
+                                Ok(removed) => serde_json::json!({"removed": removed}),
+                                Err(error) => serde_json::json!({"error": error.to_string()}),
+                            }
+                        })?;
+                    }
                 }
                 last_expiry_sweep = Instant::now();
             }
@@ -634,6 +668,7 @@ fn handle_multi_table_connection(
             return Ok(());
         }
     }
+    lock_registry(&registry)?.note_connected(&guest);
     let context = MultiConnectionContext {
         request_budget: secure.then_some((&request_budget, peer)),
         registry: &registry,
@@ -647,6 +682,14 @@ fn handle_multi_table_connection(
         run_multi_table_connection(&mut stream, &mut decoder, guest.clone(), reconnect, context);
     let _ = stream.close_notify();
     if let Ok(mut sessions) = active_sessions.lock() {
+        if let Ok(mut registry) = registry.lock() {
+            registry.note_disconnected(&guest);
+            if let Some(path) = checkpoint_path.as_deref() {
+                if let Err(error) = registry.save_checkpoint(path) {
+                    eprintln!("disconnect checkpoint failed: {error}");
+                }
+            }
+        }
         sessions.remove(&guest);
     }
     result

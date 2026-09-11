@@ -1,14 +1,31 @@
 # Release Plan
 
-Current as of 2026-09-09: Sprint 19 completed - Game lobby.
-733 forecast / 618 accepted / 115 remaining; 21 lobby points accepted.
-See [current sprint](CURRENT_SPRINT.md), [backlog](BACKLOG.md), and
-[ADR 0019](../adr/0019-dedicated-server-ownership.md).
+Current planning review: 2026-09-10. **841 forecast / 644 historically accepted /
+197 remaining**, plus 42 conditional presentation/window points if selected.
+No new sprint or release is activated. See [backlog](BACKLOG.md) and
+[full review](BACKLOG_REVIEW_2026-09-10.md) for the reconciled estimates.
 
-Current installed wire v5 / lobby v2; paired client/server installation verified. Unified presentation replaces selectable
-themes/motion. Local D1 and concurrent ring-game capabilities are accepted;
-protected LAN transport, Pi deployment, active-hand crash recovery, D2 tournament
-movement and public release are not yet claimed. Formal source/CI gate remains.
+The Fedora dedicated host and automatic verified-TLS LAN flow are deployed.
+Lifecycle cleanup is also deployed, but its source delta remains uncommitted.
+The owner reports a working Mac build with substantial emulator variability.
+The baseline fork PR is merged; one intermittent Apple Silicon restart-test
+failure remains unresolved. Do not claim all current source has passed Mac CI.
+
+Next milestone: reliable shared builds and intuitive, consistent controls on a
+measured terminal matrix (16-point recommended candidate, inactive). Next resolve
+bitmap/table-window choices, complete unified visual design and distribution,
+then Custom Practice and the first structured Study course. Study is 47 points
+including review tools; the first teaching slice is 21. Range Explorer, D2 (34)
+and public discovery/hardening (39) follow separately. No player SSH or new server
+hardware is a prerequisite. Active-hand recovery remains a decision/implementation
+gap; current recovery is between hands.
+
+Bitmap presentation and separate terminals are investigated, not approved
+architecture. A new graphical application would require an explicit scope change
+and estimate. Every activated slice retains applicable privacy, authority,
+installation, usability and recovery gates; completed historical acceptance is
+not revoked by this re-estimation. Historical definitions of full PX below are
+superseded by the bounded milestones and dependencies in the current backlog.
 
 ## Historical release and delivery record
 
