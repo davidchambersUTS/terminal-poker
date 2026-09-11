@@ -1,3 +1,27 @@
+# Sprint 21 calibration - 2026-09-11
+
+Accepted: 16 points. Planning forecast: 90-180 active minutes. No token budget,
+parallel-agent consumption or exact active-time meter was available.
+
+Observed blocks: activation/initial REL-1 work began 05:12 UTC; implementation
+continued after the owner's full-sprint clarification; publication followed
+explicit approval. Source CI ran 05:44-05:57 UTC while report/terminal/closure
+work continued. Final PDF visual QA completed by 05:59 UTC. The 47-minute wall
+window is an upper bound for active work through QA, not an exact active total.
+Unmetered user/approval gaps are excluded conceptually but cannot be subtracted
+accurately after the fact. Do not label them zero or invent interval timestamps.
+Final documentation publication/CI verification continues as a separately
+recorded follow-through interval in the local publication receipt.
+
+Through QA, active time is at most 47 minutes (at most 176.25 seconds per
+accepted point), at least 43 minutes below the forecast lower bound. Exact total
+active clock, seconds per point and full-sprint active variance are unavailable;
+this bounded observation must not replace an exact calibration sample.
+Corrective rework includes reconnect fixture setup, legal-action generator
+alignment, terminal launch/parser corrections, restoration-probe linkage, pot
+ledger accounting and PDF margins. Preserve an explicit clock next sprint.
+No token usage is claimed or reconstructed.
+
 # Agent Delivery Calibration
 
 Last updated: 2026-09-08

@@ -1,8 +1,24 @@
 # Decision Register
 
-Last reviewed: 2026-09-08
+Last reviewed: 2026-09-11
 
 Material architecture decisions belong in `docs/adr/`. This register tracks product, rules, and architectural decisions together.
+
+## Sprint 21 decisions - 2026-09-11
+
+- Use one presentation-only legal-action selector in Practice and network play;
+  existing authority/projection remains decisive. Press submits once per context;
+  arrows only move visible focus. No protocol or persistence format change.
+- Correct the all-in closed-raising-rights bypass under existing P-004/ADR 0007;
+  this is an implementation correction, not a new poker-rule interpretation.
+- Use the planned VIS-1 substitution for unavailable REL-3 device/VLAN evidence.
+  Accept the observed UX-1 baseline with unavailable named-host measurements
+  explicitly retained under REL-3/UX-4; do not infer emulator certification.
+- VIS-1 retains shared text tables; twelve offline encoding samples do not justify
+  bitmap implementation. Conditional presentation/window points remain excluded.
+- Owner approved commits, push and CI on sprint21/reliability-and-actions in the
+  owner fork. Authority excludes merge, tags and deployment. Lifecycle architecture
+  remains ADR 0023; original dirty source preserved in its working tree.
 
 ## Accepted
 

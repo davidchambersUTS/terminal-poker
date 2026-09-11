@@ -1,38 +1,37 @@
 # Sprint 21 - Reliable shared builds and keyboard actions
 
-Activated 2026-09-11 at 05:12 UTC by the owner's request to commence the next sprint.
-State: In progress. Scope: 16 points. No token budget or subagents requested.
-Goal: a reproducible shared build with reliable arrow-key actions and an observed
-terminal support baseline. Planning forecast: 90-180 active minutes, excluding
-external participant/approval waits; revise from evidence, not point conversion.
-Baseline remains 841 forecast / 644 accepted / 197 remaining, plus 42 conditional.
+Completed 2026-09-11: **16/16 accepted; no active sprint**.
+Goal achieved: a reproducible shared build, shared legal arrow-key actions and
+an observed terminal support baseline. Forecast: 841 / accepted 660 / remaining
+181; 42 conditional points excluded. No token budget or subagents requested.
 
-| Story | Points | State | Acceptance |
+| Story | Points | State | Evidence |
 |---|---:|---|---|
-| REL-1 | 3 | Local checks pass; remote CI pending | Diagnose restart flake, deterministic regression, local gates and four-platform CI evidence |
-| REL-2 | 2 | Manifest reconciliation recorded; handoff pending | Reconcile lifecycle source/artifact identity and prepare reviewable source handoff |
-| VIS-1 | 3 | Review | Bitmap encoding/fallback investigation; substitutes unavailable REL-3 rollout evidence |
-| UX-1 | 3 | Review | Record actual emulator capabilities, input and supported baseline |
-| UX-2 | 5 | Review | Shared legal Left/Right action focus; Enter submission without stale/repeated actions |
+| REL-1 | 3 | Done | Deterministic restart observation regression and green four-platform CI |
+| REL-2 | 2 | Done | 119-file manifest reconciliation and approved source branch handoff |
+| UX-1 | 3 | Done, observed baseline | Six installed Windows shell journeys; exact Mac evidence explicitly unavailable |
+| UX-2 | 5 | Done | Shared legal focus/amounts, Enter and shortcut submission, pending/stale/repeat guards |
+| VIS-1 | 3 | Done | Twelve offline bitmap samples; retain text-table decision |
 
-Plan: (1) synchronize and diagnose REL-1; (2) reconcile lifecycle source and
-rollout evidence; (3) establish terminal matrix and implement shared action focus;
-(4) focused then full gates, installed journeys and complete-hand captures;
-(5) generate and visually inspect review PDF, review/retro and update acceptance.
-If external rollout access prevents REL-3, substitute VIS-1 (3), as specified in
-the accepted recommendation, and retain the rollout gate. Remote CI/source
-publication and deployment require concrete final review and applicable authority.
-Owner authorized branch commits, push and four-platform CI on 2026-09-11.
-REL-3 remains in the backlog: Ghostty works per owner; Warp and Codex terminal
-have issues. Exact versions and a live second-device/VLAN journey are unavailable.
-The accepted VIS-1 substitution preserves 16 points. No acceptance points yet.
+VIS-1 replaces unavailable REL-3 under the planned fallback. REL-3 remains open:
+Ghostty worked well per owner; Warp/Codex app terminal issues need exact host
+reproductions and a live second-device/VLAN journey. No Mac renderer fix claimed.
 
-First slice: the Apple Silicon failure was initial_revision=1 versus expected 0
-(run 34427624828). Corrected the concurrent-process assumption and added a
-deterministic late-observer regression; production recovery semantics unchanged.
-Focused regression, formatting and strict Clippy pass. Full Windows gate: 328 passed / 0 failed / 4 existing ignored; diff check passes.
-Lifecycle manifest: 117/119 files match; only the two regression-test files differ.
-See rituals/2026-09-11-sprint-21-planning.md and output/sprint21/ for evidence.
+Local full gate: 332 passed / 0 failed / 4 existing ignored; fmt, strict Clippy,
+release client/server builds, six installed journeys and two restoration probes
+pass. Source 7a0271de1922fd8fd509ee03db4bb01a1e305782 passes Quality run
+34567133724 on Linux, Windows, macOS Intel and Apple Silicon.
+
+Final 10-page PDF, complete-hand ledger, screenshots and SHA-bound visual QA
+are complete. See [review](rituals/2026-09-11-sprint-21-review.md),
+[retro](rituals/2026-09-11-sprint-21-retrospective.md),
+[investigation/refinement](rituals/2026-09-11-sprint-21-bitmap-spike.md) and
+[inactive next recommendation](rituals/2026-09-11-sprint-22-recommendation.md).
+
+Owner authorized branch commits/push/CI. The source and final documentation use
+sprint21/reliability-and-actions in the owner fork. Original dirty work is
+preserved. No merge/tag/deployment: the running server still needs the paired
+all-in legality correction. See DELIVERY_CALIBRATION.md for timing limitations.
 
 ---
 # Sprint 20 - Linux dedicated server and automatic LAN connection

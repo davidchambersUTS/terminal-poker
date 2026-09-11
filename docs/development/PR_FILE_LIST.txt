@@ -194,3 +194,9 @@ scripts/render_sprint21_captures.py
 scripts/sprint21_terminal_smoke.py
 src/server_admin.rs
 src/ui/action_selection.rs
+scripts/build_sprint21_review.py
+docs/agile/rituals/2026-09-11-sprint-21-planning.md
+docs/agile/rituals/2026-09-11-sprint-21-bitmap-spike.md
+docs/agile/rituals/2026-09-11-sprint-21-review.md
+docs/agile/rituals/2026-09-11-sprint-21-retrospective.md
+docs/agile/rituals/2026-09-11-sprint-22-recommendation.md

@@ -1,3 +1,23 @@
+# Current risk update - 2026-09-11
+
+- High, deployed legality: the old server accepts an all-in raise with closed
+  raising rights. Source correction and regression pass all four CI platforms.
+  Mitigation owner: operator, authorized paired upgrade/rollback; public release
+  remains blocked until deployed validation. Trigger: all-in above current wager
+  after a short raise that does not reopen action.
+- Medium, named-host presentation: Ghostty works per owner; Warp/Codex issues
+  lack versions/font/reproduction evidence. Six ConPTY journeys prove the local
+  baseline only. Owner/delivery lead collect those details under REL-3/UX-4.
+- REL-1 timing flake resolved at source: deterministic late observation and
+  four-platform run 34567133724 pass. REL-2 lifecycle source reconciliation and
+  approved branch publication complete; historical uncommitted-source risk closed.
+- VIS-1 retains text tables. Offline encoding cannot prove image retention,
+  flicker or cleanup; conditional bitmap implementation remains unselected.
+- REL-3 live Mac/VLAN and operator rollout remain unverified. REL-4 active-hand
+  recovery, WIN-1 focus/credential handoff and Study content risks remain open.
+
+The dated entries below are historical and superseded where stated above.
+
 # Current risk update - 2026-09-10
 
 - Mac compilation worked per owner; emulator consistency is unproven. UX-1 measures

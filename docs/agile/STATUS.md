@@ -1,16 +1,23 @@
 # Delivery status - 2026-09-11
 
-Sprint 21 is active (16 points): reliability, source reconciliation, rollout,
-terminal support and arrow-action controls. REL-1 timing-assumption correction
-and deterministic regression are implemented locally. Windows full gate: 328 passed,
-0 failed, 4 existing ignored; fmt/strict Clippy pass. Remote CI remains pending.
-REL-2 manifest reconciliation found 117/119 exact file matches, with only the two
-new regression-test files differing. Rollout, terminal matrix and controls remain
-pending; no sprint acceptance or closure is claimed.
-Sprint 20 and the waiting-host correction remain complete.
-Planning review: 841 forecast / 644 historically accepted / 197 remaining;
-42 conditional presentation/window points are excluded. No retrospective points
-are awarded for source sharing or lifecycle work.
+Sprint 21 is complete: **16/16 accepted**, including planning, scope refinement,
+review, retrospective, final PDF visual QA and inactive next recommendation.
+Completed REL-1, REL-2, UX-1, UX-2 and VIS-1. REL-3 live Mac/VLAN rollout remains
+open under the planned substitution; Warp/Codex issues remain unverified.
+
+Practice/network share legal Left/Right focus and Enter submission. The source
+also corrects an existing all-in bypass of closed raising rights. Local gates:
+332 passed / 0 failed / 4 existing ignored, fmt and strict Clippy pass; six
+installed shell journeys and two restoration probes pass. Source 7a0271de1922
+passes all four platforms in Quality run 34567133724.
+
+**841 forecast / 660 accepted / 181 remaining**, plus 42 conditional points.
+No next sprint activated. Recommended: finish named-host/rollout checks and
+WIN-1 workflow decision before unified visual design. See the Sprint 21 review.
+Branch publication is approved; no merge, tag or deployment. The running service
+retains the old all-in defect pending an authorized paired upgrade.
+
+## Previously deployed runtime and historical evidence
 
 The installed client connects Host/Join directly to the managed Linux server at
 192.168.5.250:6969 with verified TLS. Fresh profiles use that endpoint; old tunnel

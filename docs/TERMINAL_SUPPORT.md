@@ -17,7 +17,7 @@ server. This implements the existing P-004 rule, not a new poker policy.
 
 | Host | Shell | Evidence | Status |
 |---|---|---|---|
-| Windows ConPTY on this Windows machine | CMD, Windows PowerShell, Git Bash | Installed candidate launched outside source directory; 80x30 and 56x40, basic-color fallback, navigation, Enter, resize, Home and clean exit | Sprint 21 executable matrix; see review evidence |
+| Windows ConPTY on this Windows machine | CMD, Windows PowerShell, Git Bash | Installed candidate launched outside the repository; 80x30 and 56x40, basic-color fallback, navigation, Enter, resize, Home, normal exit and Ctrl-C restoration | Sprint 21 executable matrix; see review evidence |
 | Ghostty on owner's Mac | Not specified | Owner reported that it worked well, 2026-09-11 | Reported working; version/font not supplied, not a fresh certified journey |
 | Warp | Not specified | Owner reported issues, 2026-09-11 | Unverified; retain text baseline and investigate exact rendering/input failure |
 | Codex app terminal | Embedded shell unspecified | Owner reported issues, 2026-09-11 | Unverified; a tool-controlled ConPTY is not proof of the app's visible renderer |
@@ -50,3 +50,8 @@ candidate install directory, and records each real ConPTY transcript. Its screen
 parser is an observation aid, not a replacement for the named emulator's renderer.
 `examples/review_sprint21.rs` separately exercises one complete authorized hand
 through the production selector/renderer and records the continuity ledger.
+
+Two additional local fault probes compile the exact production TerminalSession
+and panic-hook functions to verify error-unwind and panic cleanup. They pass,
+but are not induced faults in the deployed executable. The six installed journeys
+use the unmodified optimized candidate. Local evidence: output/sprint21/.

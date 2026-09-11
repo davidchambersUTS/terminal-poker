@@ -1,24 +1,23 @@
 # Release Plan
 
-Current planning review: 2026-09-10. **841 forecast / 644 historically accepted /
-197 remaining**, plus 42 conditional presentation/window points if selected.
-No new sprint or release is activated. See [backlog](BACKLOG.md) and
-[full review](BACKLOG_REVIEW_2026-09-10.md) for the reconciled estimates.
+Current review: 2026-09-11. **841 forecast / 660 accepted / 181 remaining**,
+plus 42 conditional presentation/window points. Sprint 21 is complete; no next
+sprint or release is activated. Source 7a0271de1922 passes all four Quality platforms.
+Reconciled lifecycle source and shared controls are on the approved owner branch.
 
-The Fedora dedicated host and automatic verified-TLS LAN flow are deployed.
-Lifecycle cleanup is also deployed, but its source delta remains uncommitted.
-The owner reports a working Mac build with substantial emulator variability.
-The baseline fork PR is merged; one intermittent Apple Silicon restart-test
-failure remains unresolved. Do not claim all current source has passed Mac CI.
+The Fedora host and automatic verified-TLS LAN flow remain deployed. This sprint
+has not upgraded them. The discovered all-in reopening defect is fixed in the
+paired candidate but remains in the deployed server until an authorized upgrade.
+This known deployed high-severity defect blocks public release.
 
-Next milestone: reliable shared builds and intuitive, consistent controls on a
-measured terminal matrix (16-point recommended candidate, inactive). Next resolve
-bitmap/table-window choices, complete unified visual design and distribution,
-then Custom Practice and the first structured Study course. Study is 47 points
-including review tools; the first teaching slice is 21. Range Explorer, D2 (34)
-and public discovery/hardening (39) follow separately. No player SSH or new server
-hardware is a prerequisite. Active-hand recovery remains a decision/implementation
-gap; current recovery is between hands.
+Next evidence milestone: REL-3 live Mac/VLAN rollout and WIN-1 window decision.
+Ghostty works per owner; Warp/Codex issues still need exact reproductions. The
+six ConPTY shell journeys do not certify those visible terminal hosts. VIS-1
+retains the text table; no bitmap/table-window implementation is approved.
+Then unified visual design (including UX-5 shot clock), usability and packaging,
+Custom Practice, and Study's bounded first course. Study remains 47 points,
+Range Explorer 8, D2 34 and public discovery/hardening 39. Active-hand recovery
+remains open under REL-4; current durability is between hands.
 
 Bitmap presentation and separate terminals are investigated, not approved
 architecture. A new graphical application would require an explicit scope change

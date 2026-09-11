@@ -1,9 +1,10 @@
 """Exercise the installed candidate through real Windows ConPTY shell processes."""
 from pathlib import Path
-import os, sys, json, time, threading, queue, shutil
+import os, sys, json, time, threading, queue, shutil, tempfile
 
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'output/sprint21'
+LAUNCH=Path(tempfile.gettempdir())/'sneakyblinders-sprint21-launch'
 sys.path.insert(0,str(OUT/'python-deps'))
 from winpty import PtyProcess
 import pyte
@@ -12,7 +13,7 @@ def run(name,argv,width,height,basic=False):
     env=os.environ.copy()
     env['PATH']=str(OUT/'install')+os.pathsep+env['PATH']
     if basic: env['NO_COLOR']='1'
-    process=PtyProcess.spawn(argv,cwd=str(OUT/'outside-workspace'),env=env,dimensions=(height,width))
+    process=PtyProcess.spawn(argv,cwd=str(LAUNCH),env=env,dimensions=(height,width))
     chunks=queue.Queue()
     raw=[]
     screen=pyte.Screen(width,height)
@@ -38,7 +39,7 @@ def run(name,argv,width,height,basic=False):
             if needle.casefold() in text.casefold(): return text
             if not process.isalive(): break
         raise AssertionError(f'{name} missing {needle}: {text[-2000:]}')
-    record={'shell':name,'viewport':[width,height],'host':'Windows ConPTY','basic_palette':basic}
+    record={'shell':name,'viewport':[width,height],'host':'Windows ConPTY','basic_palette':basic,'launch_directory':str(LAUNCH),'exit_key':'Ctrl-C' if basic else 'q'}
     try:
         record['home']=wait_for('Quick Practice')
         process.write('\r')
@@ -60,7 +61,7 @@ def run(name,argv,width,height,basic=False):
         record['unsupported']=wait_for('Terminal too')
         process.write('\x1b')
         record['returned_home']=wait_for('Quick Practice')
-        process.write('q')
+        process.write('\x03' if basic else 'q')
         until=time.monotonic()+8
         while process.isalive() and time.monotonic()<until: pump()
         assert not process.isalive(),'candidate did not exit'
@@ -77,7 +78,8 @@ def run(name,argv,width,height,basic=False):
 
 if __name__=='__main__':
     (OUT/'install').mkdir(exist_ok=True)
-    (OUT/'outside-workspace').mkdir(exist_ok=True)
+    assert not LAUNCH.resolve().is_relative_to(ROOT.resolve())
+    LAUNCH.mkdir(exist_ok=True)
     shutil.copy2(ROOT/'target/release/sneakyblinders.exe',OUT/'install/sneakyblinders.exe')
     shells=[('cmd',['C:/Windows/System32/cmd.exe','/d','/c','sneakyblinders']),
         ('powershell',['C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe','-NoProfile','-Command','sneakyblinders']),

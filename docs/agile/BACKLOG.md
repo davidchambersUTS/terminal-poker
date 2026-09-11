@@ -2,23 +2,24 @@
 
 Reviewed 2026-09-10 after owner feedback: Mac build works, terminal presentation
 varies, action selection needs Left/Right navigation, Study needs lessons and
-challenges, and bitmap/table-window designs merit investigation. Sprint 21 activated on 2026-09-11; see CURRENT_SPRINT.md.
+challenges, and bitmap/table-window designs merit investigation. Sprint 21 completed on 2026-09-11; see CURRENT_SPRINT.md.
 
-**Revised planning forecast: 841 = 644 historically accepted + 197 remaining.**
-This replaces the prior 759/644/115 forecast; it awards no retrospective points.
+**Revised planning forecast: 841 = 660 historically accepted + 181 remaining.**
+The September 10 reforecast was 841/644/197; Sprint 21 accepts 16 scoped points.
 Conditional bitmap and separate-window implementations add **42** only if selected
-(239 remaining / 883 total in that scenario). They are not committed scope.
+(223 remaining / 883 total in that scenario). They are not committed scope.
 Points express relative complexity, uncertainty and validation, not days or tokens.
 
 ## Current evidence and priorities
 
 The Fedora dedicated server and automatic verified-TLS LAN flow are deployed.
 It hosts independent games; D2 means one tournament spanning tables and is separate.
-The lifecycle follow-up is implemented/deployed with 327 Windows and 326 Linux
-passing tests; it is not yet committed. Five old finished games were removed.
-The owner confirms the Mac build worked; this does not establish consistent input,
-rendering, focus or image support across terminal emulators. The intermittent
-post-merge Apple Silicon restart-test failure remains open. Study is disabled in
+The lifecycle follow-up is deployed and its reconciled source is now committed on
+sprint21/reliability-and-actions. Source 7a0271de1922 passes all four CI platforms.
+Six installed Windows shell journeys validate shared keyboard controls. Ghostty
+works per owner; Warp/Codex rendering reports and live Mac/VLAN rollout remain
+unverified. The source fixes an all-in legality defect that remains in the running
+server until an authorized paired deployment. Study is disabled in
 the current shell; history/research components are not a finished lesson product.
 
 Recommended order: reliable shared baseline and observed terminal defects; action
@@ -29,16 +30,16 @@ owner explicitly changes direction. Existing poker/privacy gates apply throughou
 
 | Workstream | Remaining points | Priority / estimate confidence |
 |---|---:|---|
-| Reliability, rollout and unresolved policy | 13 | P0-P2; medium |
-| Unified UI and terminal consistency | 24 | P1; medium |
-| Bitmap and table-window decision spikes | 6 | P1; bounded investigations |
+| Reliability, rollout and unresolved policy | 8 | P0-P2; medium |
+| Unified UI and terminal consistency | 16 | P1; medium |
+| Bitmap and table-window decision spikes | 3 | P1; bounded investigations |
 | Client packaging and maintenance | 13 | P1; medium |
 | Custom Practice | 13 | P2; medium |
 | Study: review tools + first structured course | 47 | P2; low until curriculum spike |
 | Range Explorer | 8 | P3; content gate |
 | D2 multi-table tournament expansion | 34 | P3; provisional, retained estimate |
 | Public discovery and public hardening | 39 | P4; provisional, retained estimate |
-| **Base remaining** | **197** | Sprint 21 active; no new acceptance yet |
+| **Base remaining** | **181** | Sprint 21 accepted; no active sprint |
 
 The [full review](BACKLOG_REVIEW_2026-09-10.md) explains estimates, alternatives,
 course scope, prerequisites and the old-to-new allocation. All estimates below
@@ -53,17 +54,12 @@ priority. Spikes end with evidence and a decision, not an automatic implementati
 
 | ID | Outcome / acceptance boundary | Points | Depends on | Priority |
 |---|---|---:|---|---|
-| REL-1 | Reproduce and fix the intermittent restart-test failure; distinguish scheduling assumption from state defect; deterministic regression and clean four-platform CI | 3 | Existing failing CI evidence | P0 |
-| REL-2 | Reconcile deployed lifecycle source with the fork, include new files, verify exact source/artifact identity and reviewable handoff; no retrospective implementation credit | 2 | REL-1; separate commit/PR authorization | P0 |
 | REL-3 | Verify two-device LAN play, supported Mac terminal and remaining VLAN route, restart/rollback operations and ownership | 3 | Existing server; participant/admin availability | P0 |
 | REL-4 | Decide active-hand recovery target versus current between-hand rollback; failure experiment, RPO and follow-up estimate | 3 | Existing checkpoint contract | P1 |
 | POL-1 | Remove the requested 20-BB tournament starting-stack floor while retaining absolute/arithmetic limits and short-stack tests | 2 | DISC-016; current floor confirmed in code | P2 |
-| UX-1 | Reproduce emulator differences; record versions, font, cell/pixel size, key events, colour and graphics capability; publish supported baseline | 3 | Owner Mac observation | P1 |
-| UX-2 | Left/Right select legal Fold, Check/Call, Bet/Raise and All-in; Enter submits; visible focus/amount and no key-release/repeat/double submission | 5 | UX-1; current legal-action projection | P1 |
 | UX-3 | Refresh table, lobby, cards, pot and turn hierarchy as one responsive design; reuse existing states/renderer, preserve minimum fallback | 8 | UX-2, VIS-1, WIN-1 decisions | P1 |
 | UX-4 | Validate legibility, non-colour action cues, resize, first-use discoverability and complete hands on supported emulators | 5 | UX-3; final packaging checked before release | P1 |
 | UX-5 | Show the acting player's shot clock as a shrinking bar at the bottom of their player panel; derive it from the authoritative deadline, with readable time/urgency and safe reconnect/resize behavior | 3 | UX-1; existing server deadlines; integrate with UX-3 | P1 |
-| VIS-1 | Compare current text with bitmap cards/table using existing graphics support; measure resize, redraw, latency, memory and fallback; recommend approach | 3 | UX-1 | P1 |
 | WIN-1 | Prototype lobby-owned launch of one separate table terminal on Windows/Mac; test focus, safe credential handoff, cancellation and independent close; decide workflow | 3 | UX-1; DISC-001 | P1 |
 | PKG-1 | Reproducible Windows/macOS artifacts for the correct player binary and documented Linux server compatibility; clean-machine launch | 5 | REL-2, VIS-1/WIN-1 decisions | P1 |
 | PKG-2 | Install/update/rollback/uninstall with version checks, preserved player data and migration failure recovery | 5 | PKG-1 | P1 |
@@ -124,7 +120,7 @@ Cover deadline updates, elapsed/zero time, rapid turn changes, reconnect and res
 No new time-bank feature, timeout policy or practice deadline is introduced; local
 Practice shows a bar only where an authoritative timed turn exists.
 
-## Conditional options, excluded from 197
+## Conditional options, excluded from 181
 
 | ID | Outcome | Points | Activation gate |
 |---|---|---:|---|
@@ -141,12 +137,22 @@ A graphical desktop client is a different option, not another renderer silently
 included in VIS-3. If spikes favour an application-owned graphics window, estimate
 and approve that alternative before implementation. Native mobile/web remains parked.
 
-## Sprint 21 - activated 2026-09-11
+## Sprint 21 - accepted 2026-09-11
 
-**16 points:** REL-1 (3), REL-2 (2), REL-3 (3), UX-1 (3), UX-2 (5).
-Outcome: a reproducible shared build with reliable arrow-key actions and an
-observed terminal support baseline. If external rollout access blocks REL-3,
-substitute VIS-1 (3) and keep the rollout gate open. The owner activated this slice on 2026-09-11. Source publication and deployment remain separate final actions.
+| Story | Points | Accepted outcome |
+|---|---:|---|
+| REL-1 | 3 | Deterministic restart regression and green four-platform CI |
+| REL-2 | 2 | Reconciled lifecycle source and approved source handoff |
+| UX-1 | 3 | Observed Windows support baseline; unavailable named-Mac evidence explicitly retained under REL-3/UX-4 |
+| UX-2 | 5 | Shared legal Left/Right and Enter actions with visible amounts and duplicate/stale suppression |
+| VIS-1 | 3 | Measured offline bitmap/cache/resize costs; retain text table |
+
+**16 accepted.** VIS-1 substitutes for unavailable REL-3 as planned. The source
+all-in legality correction is included without extra points; deployment remains
+open. See [review](rituals/2026-09-11-sprint-21-review.md) and
+[refinement](rituals/2026-09-11-sprint-21-bitmap-spike.md).
+Next recommendation is inactive: REL-3 (3) and WIN-1 (3), subject to real Mac/device
+availability; then UX-3/UX-5/UX-4. No conditional implementation is activated.
 
 ## Historical catalogue and acceptance
 
@@ -387,7 +393,7 @@ reordering; see rituals/2026-09-09-waiting-host-fix.md.
 
 Release-preparation audit: exact proposed source checkout and fork-PR route
 recorded in ../development/PR_TRACKING_AUDIT.md. The baseline PR is merged into the fork, onboarding exists, and the owner
-reports the Mac build works. REL-1/2 track CI reliability and the uncommitted lifecycle delta.
+reports the Mac build works. Sprint 21 accepted REL-1/2 with green source CI and the reconciled lifecycle delta.
 No new sprint or points; existing packaging/release allocation unchanged.
 
 ### Dedicated game lifecycle follow-up (2026-09-10)
