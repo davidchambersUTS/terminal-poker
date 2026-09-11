@@ -321,7 +321,7 @@ Add newly discovered work here before assigning it to an epic.
 | DISC-020 | Include all kickers in complete-hand comparisons so best-five presentation and authoritative pot winners agree with poker ranking | Installed Quick Practice on 2026-09-07 | E2/E12 | Fixed in source outside a sprint without points; regression coverage includes the played hand, all four affected categories, 2-9-seat main/side pots, genuine board ties, and standard/minimum production rendering. See defect record (local archive: `rituals/2026-09-07-kicker-comparison-fix.md`) for validation and installation. |
 
 The policy-learning programme is excluded from the revised 841-point forecast,
-644 historically accepted points and 197-point remaining roadmap. Environment
+660 historically accepted points and 181-point remaining roadmap. Environment
 throughput is not policy quality, and no retrospective points are assigned to the
 implemented foundation.
 
@@ -398,4 +398,4 @@ No new sprint or points; existing packaging/release allocation unchanged.
 
 ### Dedicated game lifecycle follow-up (2026-09-10)
 
-Owner-approved bounded implementation: 10-minute empty waiting lobbies, 15-minute all-disconnected games, 5-minute finished games; durable removal and local operator list/remove/clear-inactive. Implemented and deployed outside a sprint; Windows 327/Linux 326 tests pass, native build and live TLS game/cleanup pass. Five old finished games removed; running game retained under abandonment policy. Human retest and source commit/PR pending. No new sprint or points. See ADR 0023. The earlier intermittent Mac restart-test failure remains a separate reliability follow-up.
+Owner-approved bounded implementation: 10-minute empty waiting lobbies, 15-minute all-disconnected games, 5-minute finished games; durable removal and local operator list/remove/clear-inactive. Implemented and deployed outside a sprint; Windows 327/Linux 326 tests pass, native build and live TLS game/cleanup pass. Five old finished games removed; running game retained under abandonment policy. Historical human retest remains unverified. Sprint 21 publishes the reconciled source and resolves the intermittent Mac restart assertion with green four-platform CI. No retrospective implementation points. See ADR 0023.

@@ -54,7 +54,7 @@ records are labeled local archive references. No release tag/publication is part
 of the PR. Public deployment, active-hand crash durability, ARM Linux validation
 and multi-table tournament movement remain outside accepted scope.
 
-Current work: Sprint 21, the activated 16-point reliability, rollout, terminal matrix and arrow-action slice. Then rendering/window decisions, unified visual
+Next work, inactive: remaining rollout and window decisions, then unified visual
 refresh, packaging, Custom Practice and structured Study. See the full
 [2026-09-10 review](BACKLOG_REVIEW_2026-09-10.md).
 See [Linux operations](../LINUX_SERVER.md), [ADR 0022](../adr/0022-automatic-lan-tls.md)
@@ -89,7 +89,8 @@ removed through the operator interface. No player binary update is needed.
 Source manifest: `f7ef0d77de50c21bc6be279e5c2270f0a78b46b6d13fea2769a6c0abb36b3062`.
 Local evidence is retained under `output/game-lifecycle/` (intentionally untracked).
 See [ADR 0023](../adr/0023-game-lifecycle-cleanup.md) and the Linux runbook.
-Human retest and source commit/PR remain pending; tracked in active Sprint 21.
+Historical human retest remains unverified. Sprint 21 publishes the reconciled
+source branch and passes four-platform CI; no PR or deployment is made.
 
 ## UI and Study planning review
 
